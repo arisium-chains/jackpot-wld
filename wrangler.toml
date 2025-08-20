@@ -6,8 +6,6 @@ compatibility_flags = ["nodejs_compat"]
 command = "npm run build"
 
 [build.upload]
-format = "modules"
-dir = ".vercel/output/static"
+dir = ".next"
 
-[[pages_build_output_dir]]
-dir = ".vercel/output/static"
+pages_build_output_dir = ".next"
