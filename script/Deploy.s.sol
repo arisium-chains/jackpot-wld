@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import "../contracts/PoolContract.sol";
 import "../contracts/YieldAdapter.sol";
 import "../contracts/PrizePool.sol";
+import "../contracts/VrfStub.sol";
 import "../contracts/mocks/MockWLD.sol";
 import "../contracts/mocks/MockWorldID.sol";
 import "../contracts/mocks/MockVRFCoordinator.sol";
@@ -45,7 +46,7 @@ contract DeployScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        DeploymentConfig memory config = getDeploymentConfig();
+        DeploymentConfig memory config = getDeploymentConfig(deployer);
         DeployedContracts memory contracts = deployContracts(config);
 
         // Initialize contracts with proper configurations
@@ -65,7 +66,7 @@ contract DeployScript is Script {
      * @notice Get deployment configuration based on the current network
      * @return config The deployment configuration
      */
-    function getDeploymentConfig() internal view returns (DeploymentConfig memory config) {
+    function getDeploymentConfig(address deployer) internal view returns (DeploymentConfig memory config) {
         uint256 chainId = block.chainid;
         
         if (chainId == 31337) {
@@ -77,7 +78,7 @@ contract DeployScript is Script {
                 vrfKeyHash: bytes32(0),
                 vrfSubscriptionId: 0,
                 drawInterval: 1 hours, // Short interval for testing
-                initialOwner: msg.sender
+                initialOwner: deployer
             });
         } else if (chainId == 480) {
             // Worldchain Mainnet configuration
@@ -147,13 +148,17 @@ contract DeployScript is Script {
         contracts.yieldAdapter = address(yieldAdapter);
         console.log("YieldAdapter deployed at:", address(yieldAdapter));
         
+        // Deploy VRF Adapter (VrfStub for mainnet deployment)
+        console.log("Deploying VRF Adapter...");
+        VrfStub vrfStub = new VrfStub(config.initialOwner);
+        console.log("VrfStub deployed at:", address(vrfStub));
+        
         // Deploy PrizePool
         console.log("Deploying PrizePool...");
         PrizePool prizePool = new PrizePool(
             config.wldToken,
-            config.initialOwner,
-            config.drawInterval,
-            config.vrfCoordinator
+            address(vrfStub),
+            config.initialOwner
         );
         contracts.prizePool = address(prizePool);
         console.log("PrizePool deployed at:", address(prizePool));
@@ -206,9 +211,9 @@ contract DeployScript is Script {
         yieldAdapter.addOperator(contracts.poolContract);
         console.log("Pool Contract added as Yield Adapter operator");
         
-        // Add Pool Contract as operator for Prize Pool
-        prizePool.addOperator(contracts.poolContract);
-        console.log("Pool Contract added as Prize Pool operator");
+        // Set Pool Contract for Prize Pool
+        prizePool.setPoolContract(contracts.poolContract);
+        console.log("Pool Contract set for Prize Pool");
 
         // 3. Set initial parameters for local testing
         if (block.chainid == 31337) {
@@ -218,17 +223,8 @@ contract DeployScript is Script {
             poolContract.setYieldHarvestThreshold(10 * 1e18); // 10 WLD
             poolContract.setYieldHarvestInterval(1 hours);
             
-            // Configure VRF for testing (if needed)
-            if (config.vrfCoordinator != address(0)) {
-                prizePool.setVRFConfig(
-                    config.vrfCoordinator,
-                    config.vrfSubscriptionId,
-                    config.vrfKeyHash,
-                    100000, // Lower gas limit for testing
-                    1, // Single confirmation for testing
-                    1 // Single random word
-                );
-            }
+            // Set shorter draw interval for testing
+            prizePool.setDrawInterval(1 hours); // 1 hour for testing instead of 24 hours
         }
         
         console.log("Contract initialization completed successfully");

@@ -1,165 +1,125 @@
 import { Address } from 'viem';
 
-// Contract addresses - these should be updated after deployment
-export const CONTRACT_ADDRESSES = {
+// Import ABIs from centralized location
+import PoolContractABI from '../abi/PoolContract.json';
+import PrizePoolABI from '../abi/PrizePool.json';
+import MockWLDABI from '../abi/MockWLD.json';
+
+// Contract addresses interface
+export interface ContractAddresses {
+  chainId: number;
+  poolContract: Address;
+  prizePool: Address;
+  yieldAdapter: Address;
+  wldToken: Address;
+  worldIdRouter: Address;
+  vrfCoordinator?: Address;
+  vrfAdapter: Address;
+  yieldAdapterFactory: Address;
+}
+
+// Load addresses from addresses.json
+async function loadDeployedAddresses(): Promise<ContractAddresses | null> {
+  if (typeof window === 'undefined') return null; // Server-side
+  
+  try {
+    const response = await fetch('/addresses.json');
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    return {
+      chainId: data.chainId,
+      poolContract: data.poolContract as Address,
+      prizePool: data.prizePool as Address,
+      yieldAdapter: data.yieldAdapter as Address,
+      wldToken: data.wldToken as Address,
+      worldIdRouter: data.worldIdRouter as Address,
+      vrfCoordinator: data.vrfCoordinator as Address,
+      vrfAdapter: data.vrfAdapter as Address,
+      yieldAdapterFactory: data.yieldAdapterFactory as Address,
+    };
+  } catch (error) {
+    console.warn('Failed to load addresses.json:', error);
+    return null;
+  }
+}
+
+// Fallback contract addresses from environment variables
+const FALLBACK_ADDRESSES = {
   // Local development addresses (Anvil)
   localhost: {
-    poolContract: '0x' as Address,
-    prizePool: '0x' as Address,
-    yieldAdapter: '0x' as Address,
-    wldToken: '0x' as Address,
-    worldId: '0x' as Address,
+    chainId: 31337,
+    poolContract: (process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x') as Address,
+    prizePool: (process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS || '0x') as Address,
+    yieldAdapter: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_ADDRESS || '0x') as Address,
+    wldToken: (process.env.NEXT_PUBLIC_WLD_TOKEN_ADDRESS || '0x') as Address,
+    worldIdRouter: (process.env.NEXT_PUBLIC_WORLD_ID_ROUTER_ADDRESS || '0x') as Address,
+    vrfAdapter: (process.env.NEXT_PUBLIC_VRF_ADAPTER_ADDRESS || '0x') as Address,
+    yieldAdapterFactory: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_FACTORY_ADDRESS || '0x') as Address,
   },
   // Worldchain Sepolia testnet
   worldchainSepolia: {
-    poolContract: '0x' as Address,
-    prizePool: '0x' as Address,
-    yieldAdapter: '0x' as Address,
-    wldToken: '0x' as Address,
-    worldId: '0x' as Address,
+    chainId: 11155111,
+    poolContract: (process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x') as Address,
+    prizePool: (process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS || '0x') as Address,
+    yieldAdapter: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_ADDRESS || '0x') as Address,
+    wldToken: (process.env.NEXT_PUBLIC_WLD_TOKEN_ADDRESS || '0x') as Address,
+    worldIdRouter: (process.env.NEXT_PUBLIC_WORLD_ID_ROUTER_ADDRESS || '0x') as Address,
+    vrfAdapter: (process.env.NEXT_PUBLIC_VRF_ADAPTER_ADDRESS || '0x') as Address,
+    yieldAdapterFactory: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_FACTORY_ADDRESS || '0x') as Address,
   },
   // Worldchain mainnet
   worldchain: {
-    poolContract: '0x' as Address,
-    prizePool: '0x' as Address,
-    yieldAdapter: '0x' as Address,
-    wldToken: '0x' as Address,
-    worldId: '0x' as Address,
+    chainId: 480,
+    poolContract: (process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x') as Address,
+    prizePool: (process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS || '0x') as Address,
+    yieldAdapter: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_ADDRESS || '0x') as Address,
+    wldToken: (process.env.NEXT_PUBLIC_WLD_TOKEN_ADDRESS || '0x') as Address,
+    worldIdRouter: (process.env.NEXT_PUBLIC_WORLD_ID_ROUTER_ADDRESS || '0x') as Address,
+    vrfAdapter: (process.env.NEXT_PUBLIC_VRF_ADAPTER_ADDRESS || '0x') as Address,
+    yieldAdapterFactory: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_FACTORY_ADDRESS || '0x') as Address,
   },
 } as const;
 
 // Contract ABIs - simplified versions for frontend use
-export const POOL_CONTRACT_ABI = [
-  {
-    inputs: [
-      { name: 'amount', type: 'uint256' },
-      { name: 'nullifierHash', type: 'uint256' },
-      { name: 'proof', type: 'uint256[8]' },
-    ],
-    name: 'deposit',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [{ name: 'amount', type: 'uint256' }],
-    name: 'withdraw',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [{ name: 'user', type: 'address' }],
-    name: 'getUserBalance',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getTotalDeposits',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getCurrentAPY',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getPoolStats',
-    outputs: [
-      { name: 'totalDeposits', type: 'uint256' },
-      { name: 'totalYield', type: 'uint256' },
-      { name: 'participantCount', type: 'uint256' },
-      { name: 'currentAPY', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-] as const;
+// Export ABIs from centralized location
+export const POOL_CONTRACT_ABI = PoolContractABI.abi;
 
-export const PRIZE_POOL_ABI = [
-  {
-    inputs: [],
-    name: 'getCurrentPrizeAmount',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getNextDrawTime',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getCurrentDrawId',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ name: 'drawId', type: 'uint256' }],
-    name: 'getDrawInfo',
-    outputs: [
-      { name: 'prizeAmount', type: 'uint256' },
-      { name: 'winner', type: 'address' },
-      { name: 'drawTime', type: 'uint256' },
-      { name: 'completed', type: 'bool' },
-      { name: 'participants', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-] as const;
+export const PRIZE_POOL_ABI = PrizePoolABI.abi;
 
-export const WLD_TOKEN_ABI = [
-  {
-    inputs: [{ name: 'account', type: 'address' }],
-    name: 'balanceOf',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'approve',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' },
-    ],
-    name: 'allowance',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-] as const;
+export const WLD_TOKEN_ABI = MockWLDABI.abi;
 
 // Helper function to get contract addresses for current chain
-export function getContractAddresses(chainId: number) {
+export async function getContractAddresses(chainId: number): Promise<ContractAddresses> {
+  // Try to load from addresses.json first
+  const deployedAddresses = await loadDeployedAddresses();
+  if (deployedAddresses) {
+    return deployedAddresses;
+  }
+  
+  // Fallback to environment variables
   switch (chainId) {
     case 31337:
-      return CONTRACT_ADDRESSES.localhost;
+      return FALLBACK_ADDRESSES.localhost;
     case 4801: // Worldchain Sepolia
-      return CONTRACT_ADDRESSES.worldchainSepolia;
+      return FALLBACK_ADDRESSES.worldchainSepolia;
     case 480: // Worldchain Mainnet
-      return CONTRACT_ADDRESSES.worldchain;
+      return FALLBACK_ADDRESSES.worldchain;
     default:
-      return CONTRACT_ADDRESSES.localhost;
+      return FALLBACK_ADDRESSES.localhost;
+  }
+}
+
+// Synchronous version for cases where async is not possible
+export function getContractAddressesSync(chainId: number): ContractAddresses {
+  switch (chainId) {
+    case 31337:
+      return FALLBACK_ADDRESSES.localhost;
+    case 4801: // Worldchain Sepolia
+      return FALLBACK_ADDRESSES.worldchainSepolia;
+    case 480: // Worldchain Mainnet
+      return FALLBACK_ADDRESSES.worldchain;
+    default:
+      return FALLBACK_ADDRESSES.localhost;
   }
 }

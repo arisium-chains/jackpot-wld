@@ -1,45 +1,96 @@
-import { Address } from "viem";
+import { Address } from 'viem';
 
+// User types
 export interface User {
   address: Address;
-  worldIdVerified: boolean;
-  depositBalance: bigint;
-  totalDeposited: bigint;
-  totalWithdrawn: bigint;
-  lotteryEligible: boolean;
-  joinedAt: number;
+  isVerified: boolean;
+  balance: bigint;
+  wldBalance: bigint;
+  allowance: bigint;
 }
 
-export interface PoolState {
+// Pool types
+export interface PoolStats {
   totalDeposits: bigint;
-  totalYieldGenerated: bigint;
-  currentPrizePool: bigint;
-  nextDrawTime: number;
-  currentAPY: number;
-  totalParticipants: number;
+  totalYield: bigint;
+  participantCount: bigint;
+  currentAPY: bigint;
 }
 
-export interface Transaction {
-  hash: string;
-  type: "deposit" | "withdraw" | "prize_won";
-  amount: bigint;
-  timestamp: number;
-  status: "pending" | "confirmed" | "failed";
-  blockNumber?: number;
-}
-
-export interface LotteryDraw {
-  drawId: number;
+// Prize Pool types
+export interface DrawInfo {
   prizeAmount: bigint;
   winner: Address;
-  participants: number;
-  drawTime: number;
-  randomSeed: string;
+  drawTime: bigint;
+  completed: boolean;
+  participants: bigint;
 }
 
+export interface PrizePoolData {
+  currentPrizeAmount: bigint;
+  nextDrawTime: bigint;
+  currentDrawId: bigint;
+  drawInfo?: DrawInfo;
+}
+
+// Transaction types
+export interface TransactionState {
+  hash?: `0x${string}`;
+  isPending: boolean;
+  isConfirming: boolean;
+  isConfirmed: boolean;
+  error?: Error | null;
+}
+
+// World ID types
+export interface WorldIDProof {
+  nullifier_hash: string;
+  merkle_root: string;
+  proof: string;
+  verification_level: 'orb' | 'device';
+}
+
+export interface VerificationResult {
+  success: boolean;
+  proof?: WorldIDProof;
+  error?: string;
+}
+
+// Component props types
+export interface BaseComponentProps {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export interface DepositFormData {
+  amount: string;
+  isVerified: boolean;
+}
+
+export interface WithdrawFormData {
+  amount: string;
+}
+
+// API response types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+// Chain configuration
+export interface ChainConfig {
+  id: number;
+  name: string;
+  rpcUrl: string;
+  blockExplorer: string;
+}
+
+// Contract addresses by chain
 export interface ContractAddresses {
   poolContract: Address;
-  prizePoolContract: Address;
+  prizePool: Address;
   yieldAdapter: Address;
   wldToken: Address;
+  worldId: Address;
 }

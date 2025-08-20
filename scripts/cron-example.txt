@@ -1,0 +1,15 @@
+# Example cron configuration for draw automation
+# Edit with: crontab -e
+# View with: crontab -l
+
+# Run draw automation every 5 minutes for local development
+*/5 * * * * cd /path/to/worldcoin-pooltogether-miniapp && ./scripts/draw-automation.sh --network local >> /tmp/draw-automation.log 2>&1
+
+# Run draw automation every hour for sepolia testnet (requires PRIVATE_KEY env var)
+# 0 * * * * cd /path/to/worldcoin-pooltogether-miniapp && PRIVATE_KEY="your_private_key" ./scripts/draw-automation.sh --network sepolia >> /tmp/draw-automation-sepolia.log 2>&1
+
+# Run draw automation every 30 minutes for mainnet (requires PRIVATE_KEY env var)
+# */30 * * * * cd /path/to/worldcoin-pooltogether-miniapp && PRIVATE_KEY="your_private_key" ./scripts/draw-automation.sh --network mainnet >> /tmp/draw-automation-mainnet.log 2>&1
+
+# Note: Replace /path/to/worldcoin-pooltogether-miniapp with the actual path to your project
+# Note: For production, store PRIVATE_KEY in a secure environment file instead of inline

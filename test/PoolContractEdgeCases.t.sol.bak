@@ -64,9 +64,7 @@ contract PoolContractEdgeCasesTest is Test {
         // Deploy prize pool
         prizePool = new PrizePool(
             address(mockWLD),
-            owner,
-            24 hours,
-            address(0) // No VRF coordinator for edge case tests
+            owner
         );
         
         // Connect contracts
@@ -76,11 +74,10 @@ contract PoolContractEdgeCasesTest is Test {
         // Add admin and operator
         poolContract.addAdmin(admin);
         poolContract.addOperator(operator);
-        prizePool.addAdmin(admin);
         yieldAdapter.addAdmin(admin);
         
-        // Set VRF provider
-        prizePool.setRandomnessProvider(address(mockVRF));
+        // Set pool contract for prize pool
+        prizePool.setPoolContract(address(poolContract));
         
         // Give users some tokens
         mockWLD.transfer(user1, 1000e18);
@@ -313,12 +310,12 @@ contract PoolContractEdgeCasesTest is Test {
         poolContract.accrueYield();
         
         // Check that yield was transferred to prize pool
-        assertEq(prizePool.getCurrentPrizeAmount(), YIELD_AMOUNT);
+        assertEq(prizePool.prizeBalance(), YIELD_AMOUNT);
         assertEq(mockWLD.balanceOf(address(prizePool)), YIELD_AMOUNT);
         assertEq(yieldAdapter.getYield(), 0); // Yield should be reset after harvesting
         
         // 5. Advance time to make draw ready
-        vm.warp(prizePool.getNextDrawTime());
+        vm.warp(prizePool.nextDrawAt());
         
         // 6. Draw winner
         // We need to call drawWinner to generate the randomness request

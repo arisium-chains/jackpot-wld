@@ -29,13 +29,13 @@ contract DeployTest is Test {
         // This should not revert and should deploy the PoolContract
         DeployScript.DeployedContracts memory contracts = deployScript.run();
         
-        // Verify that the function completes without reverting
-        // YieldAdapter and PrizePool will be zero until implemented in future tasks
-        assertEq(contracts.yieldAdapter, address(0));
-        assertEq(contracts.prizePool, address(0));
-        
-        // PoolContract should be deployed
+        // Verify that all contracts are deployed successfully
+        assertTrue(contracts.yieldAdapter != address(0));
+        assertTrue(contracts.prizePool != address(0));
         assertTrue(contracts.poolContract != address(0));
+        
+        console.log("YieldAdapter deployed at:", contracts.yieldAdapter);
+        console.log("PrizePool deployed at:", contracts.prizePool);
         console.log("PoolContract deployed at:", contracts.poolContract);
     }
 

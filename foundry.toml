@@ -17,6 +17,9 @@ evm_version = "paris"
 # Gas reporting
 gas_reports = ["*"]
 
+# File system permissions
+fs_permissions = [{ access = "read-write", path = "./" }]
+
 # Remappings for imports
 remappings = [
     "forge-std/=lib/forge-std/src/",

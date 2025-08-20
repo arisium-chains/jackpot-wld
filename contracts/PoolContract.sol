@@ -442,4 +442,34 @@ contract PoolContract is BaseContract, IPoolContract {
     function updateWorldId(address _worldId) external onlyAdmin validAddress(_worldId) {
         worldId = IWorldID(_worldId);
     }
+
+    /**
+     * @notice Harvest yield and fund prize pool (admin convenience function)
+     * @dev Calls accrueYield internally
+     */
+    function harvestAndFundPrize() external onlyAdmin {
+        this.accrueYield();
+    }
+
+    /**
+     * @notice Get comprehensive pool information including prize balance
+     * @return totalDeposits_ The total deposits in the pool
+     * @return totalYield The total yield generated
+     * @return participantCount_ The number of verified participants
+     * @return currentAPY The current APY from yield adapter
+     * @return prizeBalance The current prize pool balance
+     */
+    function getPoolInfo() external view returns (
+        uint256 totalDeposits_,
+        uint256 totalYield,
+        uint256 participantCount_,
+        uint256 currentAPY,
+        uint256 prizeBalance
+    ) {
+        totalDeposits_ = totalDeposits;
+        totalYield = totalYieldGenerated;
+        participantCount_ = participantCount;
+        currentAPY = address(yieldAdapter) != address(0) ? yieldAdapter.getAPY() : 0;
+        prizeBalance = address(prizePool) != address(0) ? prizePool.getCurrentPrizeAmount() : 0;
+    }
 }

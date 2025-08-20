@@ -1,0 +1,179 @@
+name: Smart Contracts CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/**'
+      - 'script/**'
+      - 'test/**'
+      - 'foundry.toml'
+      - '.github/workflows/contracts.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/**'
+      - 'script/**'
+      - 'test/**'
+      - 'foundry.toml'
+      - '.github/workflows/contracts.yml'
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  check:
+    strategy:
+      fail-fast: true
+
+    name: Foundry project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Show Foundry config
+        run: forge config
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+        id: test
+
+      - name: Run Forge coverage
+        run: |
+          forge coverage --report lcov
+        id: coverage
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./lcov.info
+          flags: contracts
+          name: contracts-coverage
+          fail_ci_if_error: false
+
+  security:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Slither and dependencies
+        run: |
+          pip install slither-analyzer
+          pip install solc-select
+          solc-select install 0.8.19
+          solc-select use 0.8.19
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run Slither
+        run: |
+          slither . --config-file slither.config.json --sarif results.sarif --json results.json
+        id: slither
+
+      - name: Check for HIGH severity issues
+        run: |
+          if [ -f results.json ]; then
+            HIGH_COUNT=$(jq '[.results.detectors[] | select(.impact == "High")] | length' results.json)
+            echo "High severity issues found: $HIGH_COUNT"
+            if [ "$HIGH_COUNT" -gt 0 ]; then
+              echo "❌ CRITICAL: $HIGH_COUNT high severity security issues found!"
+              echo "Please review and fix these issues before merging."
+              jq '.results.detectors[] | select(.impact == "High") | {check: .check, impact: .impact, confidence: .confidence, description: .description}' results.json
+              exit 1
+            else
+              echo "✅ No high severity security issues found."
+            fi
+          else
+            echo "⚠️  Slither results file not found, skipping security check."
+          fi
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: results.sarif
+        if: always()
+
+  gas-report:
+    name: Gas Report
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run gas report
+        run: |
+          forge test --gas-report > gas-report.txt
+          cat gas-report.txt
+
+      - name: Comment gas report
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const gasReport = fs.readFileSync('gas-report.txt', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Gas Report\n\n\`\`\`\n${gasReport}\n\`\`\``
+            });
+
+  deployment-dry-run:
+    name: Deployment Dry Run
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run deployment script (dry run)
+        run: |
+          forge script script/DeployTestnet.s.sol:DeployTestnet \
+            --rpc-url http://localhost:8545 \
+            --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
+            -vvv
+        env:
+          YIELD_IMPL: MOCK

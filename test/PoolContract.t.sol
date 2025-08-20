@@ -416,7 +416,7 @@ contract PoolContractTest is Test {
         
         assertEq(totalDeposits, DEPOSIT_AMOUNT * 3);
         assertEq(totalYield, 0); // No yield generated yet
-        assertEq(participantCount, 0); // Not implemented yet
+        assertEq(participantCount, 2); // Two users have deposited
         assertEq(currentAPY, 500); // Mock yield adapter returns 5% APY (500 basis points)
     }
 

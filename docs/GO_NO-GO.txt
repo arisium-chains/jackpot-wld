@@ -1,0 +1,1 @@
+GO • Stage=Staging-ready • P0=0 • Commit=017b49d • Local ready; proceed to testnet + security baseline

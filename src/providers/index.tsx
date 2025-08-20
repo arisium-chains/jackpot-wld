@@ -2,9 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
-import { config } from '@/lib/wagmi';
-import { MiniKitProvider } from '@worldcoin/minikit-js';
-import { ReactNode, useState } from 'react';
+import { config } from '../lib/wagmi';
+import { WalletProvider } from '../contexts/WalletContext';
+import { MiniKit } from '@worldcoin/minikit-js';
+import { ReactNode, useState, useEffect } from 'react';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -20,15 +21,19 @@ export function Providers({ children }: ProvidersProps) {
     },
   }));
 
+  useEffect(() => {
+    // Initialize MiniKit
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_WORLD_APP_ID) {
+      MiniKit.install(process.env.NEXT_PUBLIC_WORLD_APP_ID);
+    }
+  }, []);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <MiniKitProvider
-          appId={process.env.NEXT_PUBLIC_WORLD_APP_ID || ''}
-          defaultChain="worldchain"
-        >
+        <WalletProvider>
           {children}
-        </MiniKitProvider>
+        </WalletProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
