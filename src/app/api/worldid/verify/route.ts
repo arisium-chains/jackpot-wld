@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCloudProof } from '@worldcoin/idkit';
 import { WORLD_APP_ID, WORLD_ID_ACTION_ID } from '@/constants';
+
+export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,15 +15,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify the proof with Worldcoin's cloud verification
-    const verifyRes = await verifyCloudProof(
-      proof,
-      WORLD_APP_ID as `app_${string}`,
-      WORLD_ID_ACTION_ID,
-      signal || ''
-    );
+    // Verify the proof with Worldcoin's cloud verification API
+    const verifyRes = await fetch('https://developer.worldcoin.org/api/v1/verify/' + WORLD_APP_ID, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        nullifier_hash,
+        merkle_root,
+        proof,
+        verification_level,
+        action: WORLD_ID_ACTION_ID,
+        signal: signal || ''
+      })
+    });
 
-    if (verifyRes.success) {
+    const verifyData = await verifyRes.json();
+
+    if (verifyRes.ok && verifyData.success) {
       // Store nullifier hash to prevent reuse (in production, use a database)
       // For now, we'll just return success
       return NextResponse.json({
