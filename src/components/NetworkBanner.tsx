@@ -26,19 +26,22 @@ export function NetworkBanner() {
     setMounted(true);
   }, []);
 
-  if (!mounted || !isConnected) {
+  if (!mounted) {
     return null;
   }
 
   const networkInfo = NETWORK_INFO[chainId] || {
-    name: `Unknown Network (${chainId})`,
+    name: `Unknown Network`,
     chainId,
     color: 'bg-red-600'
   };
 
   return (
     <div className={`${networkInfo.color} text-white text-sm py-2 px-4 text-center`}>
-      <span className="font-medium">Network: {networkInfo.name}</span>
+      <span className="font-medium">Network: {networkInfo.name} (chainId: {chainId})</span>
+      {!isConnected && (
+        <span className="ml-2 text-xs opacity-90">(Not Connected)</span>
+      )}
       {chainId === 31337 && (
         <span className="ml-2 text-xs opacity-90">(Local Testnet)</span>
       )}

@@ -1,12 +1,14 @@
 {
-  "chainId": 31337,
-  "explorerBaseUrl": "http://localhost:8545",
-  "wldToken": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
-  "worldIdRouter": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
-  "vrfCoordinator": "0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901",
-  "vrfAdapter": "0x4631BCAbD6dF18D94796344963cB60d44a4136b6",
-  "yieldAdapterFactory": "0x7A9Ec1d04904907De0ED7b6839CcdD59c3716AC9",
-  "yieldAdapter": "0xf7B9dc26255f3E15570C30E0d07207Dfcd43646f",
-  "prizePool": "0x86A2EE8FAf9A840F7a2c64CA3d51209F9A02081D",
-  "poolContract": "0xA4899D35897033b927acFCf422bc745916139776"
+  "chainId": 4801,
+  "explorerBaseUrl": "https://worldscan.org/sepolia",
+  "contracts": {
+    "WLD": "0x80d51Dda8B9EE4299Fd44bC8482B623E444E072e",
+    "Pool": "0x5227e10A9d86BCc4D64DEFC4Be0CE4098F29a610",
+    "Prize": "0xf85B0b501127afaBbd9a4B31DddE7dB2fA13d655",
+    "YieldAdapter": "0x8D8c8C69f1df28c1C8fEb62d970e6c2f22A17feE",
+    "worldIdRouter": "0x79C91AFD0688ea0b3c5222Ffe595b9AAF3f40463",
+    "vrfCoordinator": "0xd92399EfeC377CE464C16fD1B3d7338f29b4Dd9F",
+    "vrfAdapter": "0xF3ACEF1c46aa96A4906599ae4709653794457447",
+    "yieldAdapterFactory": "0x1897A6C39B80862d0C6E052B28409C3255F730c5"
+  }
 }

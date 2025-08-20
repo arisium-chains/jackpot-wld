@@ -51,7 +51,7 @@ verbosity = 2
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
 sepolia = "https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
 worldchain = "https://worldchain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
-worldchain_sepolia = "https://worldchain-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+worldchain_sepolia = "https://worldchain-sepolia.g.alchemy.com/public"
 
 # Etherscan configuration
 [etherscan]

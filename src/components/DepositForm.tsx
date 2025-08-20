@@ -63,8 +63,8 @@ export function DepositForm({ onDepositSuccess, className }: DepositFormProps) {
       }
 
       // Perform deposit (simplified for now without World ID proof)
-      // Using mock values for nullifierHash and proof in this POC
-      const mockNullifierHash = BigInt('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
+      // TODO: Replace with actual World ID proof when implementing production flow
+      const mockNullifierHash = BigInt('0x0000000000000000000000000000000000000000000000000000000000000001');
       const mockProof: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
         BigInt('0x1'), BigInt('0x2'), BigInt('0x3'), BigInt('0x4'),
         BigInt('0x5'), BigInt('0x6'), BigInt('0x7'), BigInt('0x8')

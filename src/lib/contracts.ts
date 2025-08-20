@@ -27,16 +27,18 @@ async function loadDeployedAddresses(): Promise<ContractAddresses | null> {
     if (!response.ok) return null;
     
     const data = await response.json();
+    const contracts = data.contracts || data; // Support both new and legacy format
+    
     return {
       chainId: data.chainId,
-      poolContract: data.poolContract as Address,
-      prizePool: data.prizePool as Address,
-      yieldAdapter: data.yieldAdapter as Address,
-      wldToken: data.wldToken as Address,
-      worldIdRouter: data.worldIdRouter as Address,
-      vrfCoordinator: data.vrfCoordinator as Address,
-      vrfAdapter: data.vrfAdapter as Address,
-      yieldAdapterFactory: data.yieldAdapterFactory as Address,
+      poolContract: (contracts.Pool || contracts.poolContract) as Address,
+      prizePool: (contracts.Prize || contracts.prizePool) as Address,
+      yieldAdapter: (contracts.YieldAdapter || contracts.yieldAdapter) as Address,
+      wldToken: (contracts.WLD || contracts.wldToken) as Address,
+      worldIdRouter: contracts.worldIdRouter as Address,
+      vrfCoordinator: contracts.vrfCoordinator as Address,
+      vrfAdapter: contracts.vrfAdapter as Address,
+      yieldAdapterFactory: contracts.yieldAdapterFactory as Address,
     };
   } catch (error) {
     console.warn('Failed to load addresses.json:', error);

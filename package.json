@@ -20,7 +20,9 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "setup": "npm install && forge install"
+    "setup": "npm install && forge install",
+    "build:pages": "npx @cloudflare/next-on-pages@latest",
+    "preview:pages": "wrangler pages dev .vercel/output/static --compatibility-date=2024-12-01"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
@@ -48,11 +50,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@cloudflare/next-on-pages": "^1.13.5",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "tw-animate-css": "^1.3.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^3.95.0"
   }
 }

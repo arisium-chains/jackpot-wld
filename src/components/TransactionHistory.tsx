@@ -33,10 +33,11 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       setIsLoading(true);
       // Simulate API call delay
       setTimeout(() => {
+        // TODO: Replace with actual transaction data from blockchain
         const mockTransactions: Transaction[] = [
           {
             id: '1',
-            hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+            hash: '0x0000000000000000000000000000000000000000000000000000000000000001',
             type: 'deposit',
             amount: '50.0',
             status: 'confirmed',
@@ -46,7 +47,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           },
           {
             id: '2',
-            hash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+            hash: '0x0000000000000000000000000000000000000000000000000000000000000002',
             type: 'approval',
             amount: '100.0',
             status: 'confirmed',
@@ -56,7 +57,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           },
           {
             id: '3',
-            hash: '0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba',
+            hash: '0x0000000000000000000000000000000000000000000000000000000000000003',
             type: 'withdraw',
             amount: '25.0',
             status: 'confirmed',
@@ -66,7 +67,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           },
           {
             id: '4',
-            hash: '0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
+            hash: '0x0000000000000000000000000000000000000000000000000000000000000004',
             type: 'deposit',
             amount: '75.0',
             status: 'confirmed',
