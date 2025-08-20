@@ -1,0 +1,85 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local",
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".env.development"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_*",
+        "WORLDCOIN_*",
+        "SENTRY_*",
+        "CUSTOM_KEY",
+        "NODE_ENV"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "compile": {
+      "outputs": ["out/**", "cache/**"],
+      "inputs": [
+        "contracts/**/*.sol",
+        "script/**/*.sol",
+        "test/**/*.sol",
+        "foundry.toml",
+        "remappings.txt"
+      ]
+    },
+    "test:contracts": {
+      "dependsOn": ["compile"],
+      "outputs": []
+    },
+    "test:contracts:coverage": {
+      "dependsOn": ["compile"],
+      "outputs": ["coverage/**"]
+    },
+    "test:contracts:gas": {
+      "dependsOn": ["compile"],
+      "outputs": [".gas-snapshot"]
+    },
+    "deploy:local": {
+      "dependsOn": ["compile"],
+      "cache": false
+    },
+    "deploy:testnet": {
+      "dependsOn": ["compile"],
+      "cache": false
+    },
+    "deploy:sepolia": {
+      "dependsOn": ["compile"],
+      "cache": false
+    },
+    "deploy:mainnet": {
+      "dependsOn": ["compile"],
+      "cache": false
+    },
+    "build:pages": {
+      "dependsOn": ["build"],
+      "outputs": [".vercel/**"]
+    },
+    "preview:pages": {
+      "dependsOn": ["build:pages"],
+      "cache": false,
+      "persistent": true
+    }
+  },
+  "remoteCache": {
+    "signature": true
+  }
+}

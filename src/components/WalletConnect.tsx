@@ -16,6 +16,32 @@ export function WalletConnect({ className = '' }: WalletConnectProps) {
 
   // Show error state if not in World App
   if (!isInWorldApp) {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const hasValidAppId = process.env.NEXT_PUBLIC_WORLD_APP_ID && 
+      !process.env.NEXT_PUBLIC_WORLD_APP_ID.includes('__FROM_DEV_PORTAL__') &&
+      !process.env.NEXT_PUBLIC_WORLD_APP_ID.includes('app_staging_123456789');
+    
+    // In development with invalid app ID, this shouldn't show due to effectiveIsInWorldApp logic
+    // But if it does show, provide helpful development message
+    if (isDevelopment && !hasValidAppId) {
+      return (
+        <Card className={`p-6 ${className}`}>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="h-6 w-6 text-blue-600" />
+              <h3 className="text-lg font-semibold">Development Mode</h3>
+            </div>
+            <p className="text-sm text-gray-600 text-center">
+              Configure World App ID in .env.local or use mock wallet for development
+            </p>
+            <Button onClick={connect} disabled={isLoading} className="w-full">
+              {isLoading ? 'Connecting...' : 'Use Mock Wallet'}
+            </Button>
+          </div>
+        </Card>
+      );
+    }
+    
     return (
       <Card className={`p-6 ${className}`}>
         <div className="flex flex-col items-center space-y-4">

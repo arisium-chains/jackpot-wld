@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { useMiniKit } from '@/providers';
 
 interface WalletState {
   isConnected: boolean;
@@ -26,20 +27,40 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   });
   const [error, setError] = useState<string | null>(null);
   
-  // Check if running in World App
-  const isInWorldApp = typeof window !== 'undefined' && MiniKit.isInstalled();
+  // Check if running in World App using the MiniKitProvider state
+  const miniKit = useMiniKit();
+  const isInWorldApp = miniKit.isInstalled;
+  
+  // For development: allow bypass if no proper app ID is configured
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const hasValidAppId = process.env.NEXT_PUBLIC_WORLD_APP_ID && 
+    !process.env.NEXT_PUBLIC_WORLD_APP_ID.includes('__FROM_DEV_PORTAL__') &&
+    !process.env.NEXT_PUBLIC_WORLD_APP_ID.includes('app_staging_123456789');
+  
+  // In development with invalid app ID, simulate World App environment
+  const effectiveIsInWorldApp = isDevelopment && !hasValidAppId ? true : isInWorldApp;
 
   useEffect(() => {
     // Check for existing wallet connection on mount
-    if (isInWorldApp) {
+    if (effectiveIsInWorldApp) {
       // In a real implementation, you might want to check for stored auth state
       // For now, we'll assume user needs to authenticate each session
     }
-  }, [isInWorldApp]);
+  }, [effectiveIsInWorldApp]);
 
   const connect = async () => {
-    if (!isInWorldApp) {
+    if (!effectiveIsInWorldApp) {
       setError('This app must be opened in World App to connect wallet');
+      return;
+    }
+    
+    // In development mode with no valid app ID, simulate successful connection
+    if (isDevelopment && !hasValidAppId) {
+      setWalletState({
+        isConnected: true,
+        address: '0x1234567890123456789012345678901234567890', // Mock address for development
+        isLoading: false
+      });
       return;
     }
 
@@ -85,7 +106,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     connect,
     disconnect,
     error,
-    isInWorldApp
+    isInWorldApp: effectiveIsInWorldApp
   };
 
   return (
