@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WORLD_APP_ID, WORLD_ID_ACTION_ID } from '@/constants';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {

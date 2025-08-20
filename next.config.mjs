@@ -15,7 +15,6 @@ const nextConfig = {
   // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
-    NODEJS_COMPAT: 'true',
   },
   
   // Image domains for optimization
