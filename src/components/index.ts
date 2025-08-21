@@ -6,6 +6,8 @@ export { PoolStatsDashboard } from './PoolStatsDashboard';
 export { UserAccountStats } from './UserAccountStats';
 export { WalletConnect } from './WalletConnect';
 export { NetworkBanner } from './NetworkBanner';
+export { OpenInWorldAppBanner } from './OpenInWorldAppBanner';
+export { AuthButton } from './AuthButton';
 export { default as TransactionStatus } from './TransactionStatus';
 export { default as TransactionHistory } from './TransactionHistory';
 export { default as LotteryDrawManager } from './LotteryDrawManager';

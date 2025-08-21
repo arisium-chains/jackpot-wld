@@ -13,5 +13,8 @@ export {
   isUserVerified,
 } from './useWorldID';
 
+// Export MiniKit wallet hook
+export { useMiniKitWallet } from './useMiniKitWallet';
+
 // Note: wagmi hooks removed - using MiniKit wallet context instead
 // useAccount is now available from '../contexts/WalletContext'
