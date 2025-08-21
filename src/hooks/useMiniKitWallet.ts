@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { isWorldApp } from '../lib/utils';
+import { logger } from '../lib/logger';
 
 // Global type declaration for MiniKit
 declare global {
@@ -16,9 +18,9 @@ declare global {
 // MiniKit types based on official documentation
 interface MiniKitWalletAuthPayload {
   status: 'success' | 'error';
-  error?: {
-    message?: string;
-  };
+  error?: string;
+  message?: string;
+  signature?: string;
 }
 
 interface MiniKitInstance {
@@ -29,18 +31,25 @@ interface MiniKitInstance {
   };
 }
 
+// Status type as specified in requirements
+type Status = 'idle' | 'authing' | 'ready' | 'error';
+
 // Hook state interface
 interface MiniKitWalletState {
   inWorldApp: boolean;
-  status: 'idle' | 'authing' | 'ready' | 'error';
-  address?: string;
+  status: Status;
+  address?: `0x${string}`;
   error?: string;
 }
 
-// Hook return interface
-interface UseMiniKitWalletReturn extends MiniKitWalletState {
-  beginAuth: () => Promise<void>;
-  reset: () => void;
+// Hook return interface - matches exact requirements
+interface UseMiniKitWalletReturn {
+  inWorldApp: boolean;
+  status: Status;
+  address?: `0x${string}`;
+  error?: string;
+  beginAuth(): Promise<void>;
+  reset(): void;
 }
 
 // Error types for better error handling
@@ -62,7 +71,7 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
 
   // Environment detection - check if we're in World App
   const checkEnvironment = useCallback(() => {
-    const inWorldApp = typeof window !== 'undefined' && !!window.MiniKit;
+    const inWorldApp = isWorldApp();
     const isDevelopment = process.env.NODE_ENV === 'development';
     const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
     
@@ -116,140 +125,56 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
 
   // Main authentication function
   const beginAuth = useCallback(async (): Promise<void> => {
-    // Check environment first
-    const isInWorldApp = checkEnvironment();
-    if (!isInWorldApp) {
-      setState(prev => ({
-        ...prev,
-        status: 'error',
-        error: 'This app must be opened in World App to connect wallet'
-      }));
-      return;
+    logger.walletAuth('begin', {});
+    
+    if (!isWorldApp()) {
+      logger.walletAuth('environment_check_failed', { error: 'MiniKitUnavailable' });
+      throw new Error('MiniKitUnavailable');
     }
-
+    
+    logger.walletAuth('authing', {});
     setState(prev => ({ ...prev, status: 'authing', error: undefined }));
 
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
-
-      // Development mode - use mock authentication
-      if (isDevelopment && isDevMode) {
-        console.log('🔧 Development mode: Using mock wallet authentication');
-        
-        // Simulate the full SIWE authentication flow
-        const nonceResponse = await fetch('/api/auth/nonce');
-        if (!nonceResponse.ok) {
-          throw new Error('Failed to generate nonce');
-        }
-        const { nonce } = await nonceResponse.json();
-        
-        // Mock SIWE message
-        const domain = window.location.host;
-        const uri = window.location.origin;
-        const mockAddress = '0x1234567890123456789012345678901234567890';
-        const statement = 'Sign in to JackpotWLD to access your account';
-        const version = '1';
-        const chainId = '480'; // Worldchain mainnet
-        const issuedAt = new Date().toISOString();
-        const expirationTime = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-        
-        const siweMessage = `${domain} wants you to sign in with your Ethereum account:\n${mockAddress}\n\n${statement}\n\nURI: ${uri}\nVersion: ${version}\nChain ID: ${chainId}\nNonce: ${nonce}\nIssued At: ${issuedAt}\nExpiration Time: ${expirationTime}`;
-        
-        // Mock signature
-        const mockSignature = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234';
-        
-        // Verify with backend
-        const verifyResponse = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: siweMessage,
-            signature: mockSignature,
-            address: mockAddress,
-            nonce: nonce
-          })
-        });
-        
-        if (!verifyResponse.ok) {
-          throw new Error('Mock signature verification failed');
-        }
-        
-        const verifyResult = await verifyResponse.json();
-        if (!verifyResult.success) {
-          throw new Error(verifyResult.message || 'Mock verification failed');
-        }
-        
-        console.log('✅ Mock wallet connected:', mockAddress);
-        setState({
-          inWorldApp: true,
-          status: 'ready',
-          address: mockAddress
-        });
-        return;
-      }
-
-      // Production mode - use real MiniKit
-      if (!MiniKit.isInstalled()) {
-        throw new Error('MiniKit is not properly installed. Please ensure you are using the latest version of World App.');
-      }
-
-      if (!MiniKit.commandsAsync?.walletAuth) {
-        throw new Error('Wallet authentication is not available. Please update your World App.');
-      }
-
-      console.log('🔗 Starting MiniKit wallet authentication...');
+      logger.walletAuth('fetching_nonce', {});
+      const { nonce } = await (await fetch('/api/siwe/nonce')).json()
       
-      // Step 1: Generate nonce from backend
-      const nonceResponse = await fetch('/api/auth/nonce');
-      if (!nonceResponse.ok) {
-        const errorData = await nonceResponse.json();
-        throw new Error(errorData.message || 'Nonce generation failed');
-      }
-      const { nonce } = await nonceResponse.json();
+      logger.walletAuth('wallet_auth_request', { nonce });
+      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({ nonce })
       
-      console.log('📝 Generated nonce for SIWE authentication');
-      
-      // Step 2: Call walletAuth with nonce (following official docs)
-      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({ nonce });
-      
-      console.log('📱 Received walletAuth response:', finalPayload);
-      
-      // Step 3: Check if authentication was successful
       if (finalPayload?.status === 'error') {
-        throw new Error('Wallet authentication failed');
+        logger.walletAuth('wallet_auth_error', { error: finalPayload?.error_code });
+        throw new Error(finalPayload?.error_code ?? 'WalletAuthError');
+      }
+
+      const addr = window.MiniKit?.walletAddress ?? null
+      if (!addr) {
+        logger.walletAuth('wallet_address_missing', {});
+        throw new Error('WalletAddressMissing');
       }
       
-      if (finalPayload?.status !== 'success') {
-        throw new Error('Wallet authentication was not successful');
+      logger.walletAuth('wallet_address_obtained', { address: addr });
+
+      // Optional: SIWE-like verify; MiniKit returns message/signature via finalPayload if configured
+      const { message, signature } = finalPayload
+      if (message && signature) {
+        logger.walletAuth('verifying_signature', { address: addr });
+        const r = await fetch('/api/siwe/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ address: addr, message, signature }) })
+        const v = await r.json()
+        if (!v.ok) {
+          logger.walletAuth('verification_failed', { address: addr });
+          throw new Error('ServerVerifyFailed');
+        }
+        logger.walletAuth('verification_success', { address: addr });
       }
+
+      logger.walletAuth('auth_complete', { address: addr });
+      setState(prev => ({ ...prev, address: addr as `0x${string}`, status: 'ready' }));
       
-      // Step 4: Get wallet address from MiniKit (per official docs)
-      const walletAddress = window.MiniKit?.walletAddress ?? (MiniKit as MiniKitInstance).walletAddress;
-      
-      if (!walletAddress) {
-        throw new Error('Wallet address not available after authentication');
-      }
-      
-      console.log('✅ MiniKit wallet connected:', walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4));
-      
-      setState({
-        inWorldApp: true,
-        status: 'ready',
-        address: walletAddress
-      });
-      
-    } catch (error) {
-      console.error('❌ Wallet authentication failed:', error);
-      
-      const errorType = getErrorType(error);
-      const errorMessage = getErrorMessage(errorType, error);
-      
-      setState(prev => ({
-        ...prev,
-        status: 'error',
-        error: errorMessage
-      }));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unexpected'
+      logger.walletAuth('auth_error', { error: errorMessage, originalError: err });
+      setState(prev => ({ ...prev, error: errorMessage, status: 'error' }))
     }
   }, [checkEnvironment]);
 

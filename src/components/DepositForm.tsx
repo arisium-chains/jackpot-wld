@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount } from '../contexts/WalletContext';
+import { useMiniKitWallet } from '../hooks/useMiniKitWallet';
 import { parseEther, formatEther } from 'viem';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -20,7 +20,8 @@ export function DepositForm({ onDepositSuccess, className }: DepositFormProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { address, isConnected } = useAccount();
+  const { status, address } = useMiniKitWallet();
+  const isConnected = status === 'ready' && !!address;
   // TODO: Implement balance fetching with MiniKit or direct contract calls
   const balance = { value: BigInt(0), formatted: '0' };
 
@@ -118,13 +119,13 @@ export function DepositForm({ onDepositSuccess, className }: DepositFormProps) {
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.0"
               className="pr-16"
-              disabled={isLoading}
+              disabled={isLoading || !isConnected}
             />
             <button
               type="button"
               onClick={handleMaxClick}
               className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-              disabled={isLoading || !balance}
+              disabled={isLoading || !balance || !isConnected}
             >
               MAX
             </button>
@@ -150,10 +151,10 @@ export function DepositForm({ onDepositSuccess, className }: DepositFormProps) {
 
         <Button
           type="submit"
-          disabled={isLoading || !amount || parseFloat(amount) <= 0}
+          disabled={isLoading || !amount || parseFloat(amount) <= 0 || !isConnected}
           className="w-full"
         >
-          {isLoading ? 'Processing...' : 'Deposit Tokens'}
+          {isLoading ? 'Processing...' : !isConnected ? 'Connect Wallet First' : 'Deposit Tokens'}
         </Button>
       </form>
 
