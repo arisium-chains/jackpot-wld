@@ -26,23 +26,34 @@ export async function POST(request: NextRequest) {
        );
     }
 
+    // Log the incoming message for debugging
+    console.log('Received SIWE message:', message);
+    console.log('Received signature:', signature);
+    console.log('Received address:', address);
+    console.log('Received nonce:', nonce);
+    
     // Parse the SIWE message to extract components
     const siweMessage = parseSiweMessage(message);
     if (!siweMessage) {
+      console.log('Failed to parse SIWE message');
       return NextResponse.json(
         { 
           success: false, 
           error: 'Invalid SIWE message format',
-          message: 'The authentication message format is invalid' 
+          message: 'The authentication message format is invalid',
+          debug: { receivedMessage: message }
         },
         { status: 400 }
       );
     }
+    
+    console.log('Parsed SIWE message:', siweMessage);
 
     // Use mock verification for development (Edge runtime compatible)
     const isValidSignature = mockVerifySignature(message, signature, address);
     
     if (!isValidSignature) {
+      console.error('Signature verification failed:', { signature, address, message });
       return NextResponse.json(
         { 
           success: false, 
@@ -56,11 +67,14 @@ export async function POST(request: NextRequest) {
     // Validate SIWE message components
     const validationResult = validateSiweMessage(siweMessage);
     if (!validationResult.valid) {
+      console.log('SIWE validation failed:', validationResult.error);
+      console.log('SIWE message being validated:', siweMessage);
       return NextResponse.json(
         { 
           success: false, 
           error: validationResult.error,
-          message: 'Authentication message validation failed' 
+          message: 'Authentication message validation failed',
+          debug: { siweMessage, validationError: validationResult.error }
         },
         { status: 400 }
       );

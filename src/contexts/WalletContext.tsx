@@ -81,15 +81,82 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    // In development mode, simulate successful connection
+    // In development mode, simulate the full SIWE authentication flow
     if (isDevelopment && isDevMode) {
-      console.log('Development mode: Using mock wallet connection');
-      setWalletState({
-        isConnected: true,
-        address: '0x1234567890123456789012345678901234567890', // Mock address for development
-        isLoading: false
-      });
-      return;
+      console.log('Development mode: Testing full SIWE authentication flow');
+      
+      try {
+        // Step 1: Generate nonce from backend
+        const nonceResponse = await fetch('/api/auth/nonce');
+        if (!nonceResponse.ok) {
+          const errorData = await nonceResponse.json();
+          throw new Error(errorData.message || 'Nonce generation failed');
+        }
+        const { nonce } = await nonceResponse.json();
+        
+        // Step 2: Create a mock SIWE message that matches EIP-4361 format
+        const domain = window.location.host;
+        const uri = window.location.origin;
+        const address = '0x1234567890123456789012345678901234567890';
+        const statement = 'Sign in to JackpotWLD to access your account';
+        const version = '1';
+        const chainId = '480'; // Worldchain mainnet
+        const issuedAt = new Date().toISOString();
+        const expirationTime = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+        
+        const siweMessage = `${domain} wants you to sign in with your Ethereum account:
+${address}
+
+${statement}
+
+URI: ${uri}
+Version: ${version}
+Chain ID: ${chainId}
+Nonce: ${nonce}
+Issued At: ${issuedAt}
+Expiration Time: ${expirationTime}`;
+        
+        console.log('Mock SIWE message:', siweMessage);
+        
+        // Step 3: Mock signature (in real app, this comes from World App)
+        const mockSignature = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234';
+        
+        // Step 4: Verify with backend
+        const verifyResponse = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: siweMessage,
+            signature: mockSignature,
+            address: address,
+            nonce: nonce
+          }),
+        });
+        
+        if (!verifyResponse.ok) {
+          const errorData = await verifyResponse.json();
+          console.error('Verification failed:', errorData);
+          throw new Error(errorData.message || 'Signature verification failed');
+        }
+        
+        const verifyResult = await verifyResponse.json();
+        if (verifyResult.success) {
+          console.log('✅ Mock authentication successful');
+          setWalletState({
+            isConnected: true,
+            address: address,
+            isLoading: false
+          });
+        } else {
+          throw new Error(verifyResult.message || 'Signature verification failed');
+        }
+        return;
+      } catch (err) {
+        console.error('Mock authentication failed:', err);
+        throw err;
+      }
     }
 
     setWalletState(prev => ({ ...prev, isLoading: true }));
@@ -141,6 +208,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       if (authResult.status === 'success') {
         console.log('✅ Wallet auth successful, verifying signature...');
+        console.log('Auth result details:', {
+          message: authResult.message,
+          siwe_message: authResult.siwe_message,
+          signature: authResult.signature,
+          address: authResult.address,
+          nonce: nonce
+        });
+        
+        const siweMessage = authResult.message || authResult.siwe_message;
+        if (!siweMessage) {
+          throw new Error('No SIWE message received from World App');
+        }
+        
+        console.log('SIWE message from World App:', siweMessage);
         
         // Verify signature with backend
         const verifyResponse = await fetch('/api/auth/verify', {
@@ -149,7 +230,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            message: authResult.message || authResult.siwe_message,
+            message: siweMessage,
             signature: authResult.signature,
             address: authResult.address,
             nonce: nonce
