@@ -4,6 +4,23 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { MiniKit } from '@worldcoin/minikit-js';
 import { useMiniKit } from '@/providers';
 
+// Define our own types based on expected MiniKit response structure
+interface WalletAuthSuccess {
+  status: 'success';
+  message?: string;
+  siwe_message?: string;
+  signature: string;
+  address: string;
+}
+
+interface WalletAuthError {
+  status: 'error';
+  details?: string;
+  error_message?: string;
+}
+
+type AuthResult = WalletAuthSuccess | WalletAuthError | null;
+
 interface WalletState {
   isConnected: boolean;
   address: string | null;
@@ -89,32 +106,104 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         throw new Error('Wallet authentication is not available. Please update your World App.');
       }
 
-      console.log('Attempting wallet authentication...');
-      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce: Math.floor(Math.random() * 1000000).toString(),
-        requestId: 'wallet-auth-' + Date.now(),
-        expirationTime: new Date(Date.now() + 5 * 60 * 1000),
-        notBefore: new Date(),
-        statement: 'Connect your wallet to PoolTogether'
-      });
+      console.log('🔗 Attempting wallet connection...');
       
-      console.log('Wallet auth response:', finalPayload);
+      // Step 1: Generate nonce from backend
+      const nonceResponse = await fetch('/api/auth/nonce');
+      if (!nonceResponse.ok) {
+        const errorData = await nonceResponse.json();
+        throw new Error(errorData.message || 'Nonce generation failed');
+      }
+      const { nonce } = await nonceResponse.json();
       
-      if (finalPayload.status === 'success') {
-        setWalletState({
-          isConnected: true,
-          address: finalPayload.address,
-          isLoading: false
+      // Step 2: Create SIWE message according to EIP-4361
+      const domain = window.location.host;
+      const uri = window.location.origin;
+      const statement = 'Sign in to JackpotWLD with your Ethereum account';
+      const version = '1';
+      const chainId = '480'; // Worldchain mainnet
+      const issuedAt = new Date().toISOString();
+      
+      // Step 3: Call walletAuth with proper SIWE parameters
+      const authResult = await MiniKit.commands.walletAuth({
+        nonce,
+        requestId: '0',
+        expirationTime: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
+        statement: 'Sign in to JackpotWLD to access your account',
+      }) as AuthResult;
+      
+      console.log('Wallet auth response:', authResult);
+      
+      if (!authResult) {
+        throw new Error('Wallet authentication failed - no response');
+      }
+      
+      if (authResult.status === 'success') {
+        console.log('✅ Wallet auth successful, verifying signature...');
+        
+        // Verify signature with backend
+        const verifyResponse = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: authResult.message || authResult.siwe_message,
+            signature: authResult.signature,
+            address: authResult.address,
+            nonce: nonce
+          }),
         });
-        console.log('Wallet connected successfully:', finalPayload.address);
+        
+        if (!verifyResponse.ok) {
+          const errorData = await verifyResponse.json();
+          throw new Error(errorData.message || 'Signature verification failed');
+        }
+        
+        const verifyResult = await verifyResponse.json();
+        if (verifyResult.success) {
+          console.log('✅ Signature verified successfully');
+          
+          setWalletState({
+            isConnected: true,
+            address: authResult.address,
+            isLoading: false
+          });
+        } else {
+          throw new Error(verifyResult.message || 'Signature verification failed');
+        }
       } else {
-        throw new Error(`Wallet authentication failed: ${finalPayload.status}`);
+        // Handle error case
+        const errorMessage = authResult.details || authResult.error_message || 'Wallet authentication failed';
+        throw new Error(errorMessage);
       }
     } catch (err) {
-      console.error('Wallet connection error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet. Please try again.';
+      console.error('❌ Wallet connection failed:', err);
+      
+      let errorMessage = 'Failed to connect wallet';
+      
+      if (err instanceof Error) {
+        // Handle specific error types
+        if (err.message.includes('User rejected')) {
+          errorMessage = 'Wallet connection was cancelled by user';
+        } else if (err.message.includes('Signature verification failed')) {
+          errorMessage = 'Unable to verify wallet signature. Please try again.';
+        } else if (err.message.includes('Nonce generation failed')) {
+          errorMessage = 'Authentication service temporarily unavailable. Please try again.';
+        } else if (err.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setWalletState({
+        isConnected: false,
+        address: null,
+        isLoading: false
+      });
       setError(errorMessage);
-      setWalletState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
