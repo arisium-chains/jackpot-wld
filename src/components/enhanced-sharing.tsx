@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useEnhancedSharing, useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
 import { ShareOptions, ShareResponse, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -109,7 +110,7 @@ export function EnhancedSharing({
         setShareHistory(history);
       }
     } catch (error) {
-      logger.error('Failed to load share history', error);
+      logger.error('Failed to load share history', { error: String(error) });
     }
   }, []);
 
@@ -127,7 +128,7 @@ export function EnhancedSharing({
     try {
       localStorage.setItem('sharing-history', JSON.stringify(updatedHistory));
     } catch (error) {
-      logger.error('Failed to save share history', error);
+      logger.error('Failed to save share history', { error: String(error) });
     }
   }, [shareHistory]);
 
@@ -139,7 +140,7 @@ export function EnhancedSharing({
       const qrData = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(customUrl)}`;
       setQrCodeData(qrData);
     } catch (error) {
-      logger.error('Failed to generate QR code', error);
+      logger.error('Failed to generate QR code', { error: String(error) });
     }
   }, [customUrl]);
 
@@ -167,16 +168,17 @@ export function EnhancedSharing({
 
       // Prepare share options
       const shareOptions: ShareOptions = {
-        title: customTitle,
-        text: customDescription,
-        url: customUrl,
-        imageUrl: imageUrl || undefined
+        content: {
+          text: customDescription,
+          url: customUrl,
+          image: imageUrl || undefined
+        }
       };
 
       // Execute native share
       const response = await sharing.share(shareOptions);
 
-      if (response.success) {
+      if (response) {
         // Track successful share
         if (trackSharing) {
           await analytics.track({
@@ -231,14 +233,10 @@ export function EnhancedSharing({
 
       // Call error callback
       if (error instanceof Error) {
-        onError?.({
-          code: 'SHARE_FAILED',
-          message: errorMessage,
-          timestamp: new Date()
-        });
+        onError?.({          code: 'SHARE_CANCELLED',          message: errorMessage,          timestamp: new Date()        });
       }
 
-      logger.error('Native share failed', error);
+      logger.error('Native share failed', { error: String(error) });
     } finally {
       setIsSharing(false);
     }
@@ -315,7 +313,7 @@ export function EnhancedSharing({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Social share failed';
       setShareError(errorMessage);
-      logger.error(`Social share to ${platform} failed`, error);
+      logger.error(`Social share to ${platform} failed`, { error: String(error) });
     }
   }, [customTitle, customDescription, customUrl, analytics, trackSharing, saveShareToHistory]);
 
@@ -348,7 +346,7 @@ export function EnhancedSharing({
       logger.info('Link copied to clipboard');
     } catch (error) {
       setShareError('Failed to copy link');
-      logger.error('Failed to copy link', error);
+      logger.error('Failed to copy link', { error: String(error) });
     }
   }, [customUrl, analytics, trackSharing, saveShareToHistory]);
 
@@ -468,10 +466,10 @@ export function EnhancedSharing({
         <div className="mb-6">
           <button
             onClick={handleNativeShare}
-            disabled={isSharing || sharing.status === 'sharing'}
+            disabled={isSharing}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
           >
-            {isSharing || sharing.status === 'sharing' ? (
+            {isSharing ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Sharing...

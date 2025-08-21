@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
 import { AnalyticsEvent, UserProperties, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -147,7 +148,7 @@ export function EnhancedAnalytics({
 
       return () => clearInterval(interval);
     }
-  }, [showRealTime, analytics.sessionId]);
+  }, [showRealTime]);
 
   // Load analytics data
   const loadAnalyticsData = useCallback(async () => {
@@ -267,12 +268,12 @@ export function EnhancedAnalytics({
       const errorMessage = error instanceof Error ? error.message : 'Failed to load analytics data';
       
       onError?.({
-        code: 'ANALYTICS_LOAD_FAILED',
+        code: 'UNKNOWN_ERROR',
         message: errorMessage,
         timestamp: new Date()
       });
 
-      logger.error('Failed to load analytics data', error);
+      logger.error('Failed to load analytics data', { error: String(error) });
     } finally {
       setIsLoading(false);
     }
@@ -293,7 +294,7 @@ export function EnhancedAnalytics({
         }
       });
     } catch (error) {
-      logger.error('Failed to track page view', error);
+      logger.error('Failed to track page view', { error: String(error) });
     }
   }, [analytics, wallet.state]);
 
@@ -331,17 +332,17 @@ export function EnhancedAnalytics({
       // Reset form
       setCustomEvent({ name: '', properties: '{}' });
 
-      logger.info('Custom event tracked successfully', newEvent);
+      logger.info('Custom event tracked successfully', { event: newEvent.name, properties: JSON.stringify(newEvent.properties) });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to track custom event';
       
       onError?.({
-        code: 'CUSTOM_EVENT_FAILED',
+        code: 'UNKNOWN_ERROR',
         message: errorMessage,
         timestamp: new Date()
       });
 
-      logger.error('Failed to track custom event', error);
+      logger.error('Failed to track custom event', { error: String(error) });
     }
   }, [customEvent, analytics, onError]);
 
@@ -351,9 +352,9 @@ export function EnhancedAnalytics({
       await analytics.setUserProperties(properties);
       setUserProperties(prev => ({ ...prev, ...properties }));
       
-      logger.info('User properties updated', properties);
+      logger.info('User properties updated', { properties: JSON.stringify(properties) });
     } catch (error) {
-      logger.error('Failed to update user properties', error);
+      logger.error('Failed to update user properties', { error: String(error) });
     }
   }, [analytics]);
 

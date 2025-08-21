@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { miniAppSDK, EnhancedMiniAppSDK } from '../lib/miniapp-sdk';
 import {
   MiniAppSDK,
@@ -172,45 +172,51 @@ export function EnhancedMiniKitProvider({
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(miniAppSDK.offline.status);
 
   // Event handlers
-  const handleSDKReady = useCallback(() => {
+  const handleSDKReady = useCallback((data: unknown) => {
     setStatus(miniAppSDK.status);
     setIsReady(true);
     logger.info('Enhanced MiniKit Provider: SDK ready');
   }, []);
 
-  const handleSDKError = useCallback((data: { error: SDKError }) => {
-    setError(data.error);
-    logger.error('Enhanced MiniKit Provider: SDK error', data.error);
+  const handleSDKError = useCallback((data: unknown) => {
+    const errorData = data as { error: SDKError };
+    setError(errorData.error);
+    logger.error('Enhanced MiniKit Provider: SDK error', { error: errorData.error.message });
   }, []);
 
-  const handleWalletConnected = useCallback((data: { address: string }) => {
+  const handleWalletConnected = useCallback((data: unknown) => {
+    const walletData = data as { address: string };
     setWalletState(miniAppSDK.wallet.state);
-    logger.info('Enhanced MiniKit Provider: Wallet connected', data);
+    logger.info('Enhanced MiniKit Provider: Wallet connected', walletData);
   }, []);
 
-  const handleWalletDisconnected = useCallback(() => {
+  const handleWalletDisconnected = useCallback((data: unknown) => {
     setWalletState(miniAppSDK.wallet.state);
     logger.info('Enhanced MiniKit Provider: Wallet disconnected');
   }, []);
 
-  const handlePaymentCompleted = useCallback((data: { transactionHash: string }) => {
+  const handlePaymentCompleted = useCallback((data: unknown) => {
+    const paymentData = data as { transactionHash: string };
     setPaymentStatus(miniAppSDK.payment.status);
-    logger.info('Enhanced MiniKit Provider: Payment completed', data);
+    logger.info('Enhanced MiniKit Provider: Payment completed', paymentData);
   }, []);
 
-  const handlePaymentFailed = useCallback((data: { error: string }) => {
+  const handlePaymentFailed = useCallback((data: unknown) => {
+    const errorData = data as { error: string };
     setPaymentStatus(miniAppSDK.payment.status);
-    logger.error('Enhanced MiniKit Provider: Payment failed', data);
+    logger.error('Enhanced MiniKit Provider: Payment failed', errorData);
   }, []);
 
-  const handleWorldIDVerified = useCallback((data: { proof: WorldIDProof }) => {
+  const handleWorldIDVerified = useCallback((data: unknown) => {
+    const verificationData = data as { proof: WorldIDProof };
     setVerificationStatus(miniAppSDK.worldId.status);
-    logger.info('Enhanced MiniKit Provider: World ID verified', data);
+    logger.info('Enhanced MiniKit Provider: World ID verified', verificationData);
   }, []);
 
-  const handleOfflineSynced = useCallback((data: { itemCount: number }) => {
+  const handleOfflineSynced = useCallback((data: unknown) => {
+    const syncData = data as { itemCount: number };
     setSyncStatus(miniAppSDK.offline.status);
-    logger.info('Enhanced MiniKit Provider: Offline sync completed', data);
+    logger.info('Enhanced MiniKit Provider: Offline sync completed', syncData);
   }, []);
 
   // Initialize SDK and event listeners
@@ -237,7 +243,7 @@ export function EnhancedMiniKitProvider({
           setIsReady(true);
         }
       } catch (error) {
-        logger.error('Enhanced MiniKit Provider: Initialization failed', error);
+        logger.error('Enhanced MiniKit Provider: Initialization failed', { error: (error as Error).message });
         setError(error as SDKError);
       }
     };
@@ -265,7 +271,7 @@ export function EnhancedMiniKitProvider({
       setEnvironment(miniAppSDK.environment);
       setIsReady(true);
     } catch (error) {
-      logger.error('Enhanced MiniKit Provider: Manual initialization failed', error);
+      logger.error('Enhanced MiniKit Provider: Manual initialization failed', { error: (error as Error).message });
       setError(error as SDKError);
       throw error;
     }

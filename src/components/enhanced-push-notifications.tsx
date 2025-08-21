@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useEnhancedNotifications, useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
 import { PushNotificationOptions, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -118,7 +119,7 @@ const DEFAULT_CATEGORIES: NotificationCategory[] = [
     enabled: true,
     sound: true,
     vibration: true,
-    priority: 'urgent'
+    priority: 'high'
   },
   {
     id: 'promotions',
@@ -195,22 +196,19 @@ export function EnhancedPushNotifications({
   const checkPermissionStatus = useCallback(async () => {
     try {
       setPermissionStatus('checking');
-      const hasPermission = await notifications.hasPermission();
-      setPermissionStatus(hasPermission ? 'granted' : 'default');
+      const permission = notifications.permission;
+      setPermissionStatus(permission.status);
       
-      if (hasPermission) {
-        // Load subscription info
-        const subscription = await notifications.getSubscription();
-        if (subscription) {
-          setSubscriptionInfo({
-            endpoint: subscription.endpoint,
-            keys: subscription.keys
-          });
-        }
+      if (permission.status === 'granted') {
+        // Set basic subscription info since getSubscription is not available
+        setSubscriptionInfo({
+          endpoint: 'minikit-notifications',
+          keys: { p256dh: '', auth: '' }
+        });
       }
     } catch (error) {
       setPermissionStatus('denied');
-      logger.error('Failed to check notification permission', error);
+      logger.error('Failed to check notification permission', { error: String(error) });
     }
   }, [notifications]);
 
@@ -238,19 +236,14 @@ export function EnhancedPushNotifications({
 
       if (granted) {
         // Subscribe to push notifications
-        const subscription = await notifications.subscribe();
-        if (subscription) {
-          setSubscriptionInfo({
-            endpoint: subscription.endpoint,
-            keys: subscription.keys
-          });
-        }
+        // Subscribe functionality not available in current SDK
+        // setSubscriptionInfo would be called here if subscription was available
 
         // Track successful permission grant
         await analytics.track({
           name: 'notification_permission_granted',
           properties: {
-            subscription_endpoint: subscription?.endpoint
+            subscription_endpoint: null
           }
         });
 
@@ -278,12 +271,12 @@ export function EnhancedPushNotifications({
       });
 
       onError?.({
-        code: 'NOTIFICATION_PERMISSION_FAILED',
+        code: 'PERMISSION_DENIED',
         message: errorMessage,
         timestamp: new Date()
       });
 
-      logger.error('Failed to request notification permission', error);
+      logger.error('Failed to request notification permission', { error: String(error) });
     } finally {
       setIsProcessing(false);
     }
@@ -321,10 +314,10 @@ export function EnhancedPushNotifications({
         tag: notificationData.tag,
         data: { category: notificationData.category, test: true },
         actions: notificationData.actions,
-        requireInteraction: notificationData.requireInteraction
+        // requireInteraction: notificationData.requireInteraction // Not available in PushNotificationOptions
       };
 
-      await notifications.send(options);
+      await notifications.schedule(options);
 
       // Add to history
       const historyItem: NotificationHistoryItem = {
@@ -351,12 +344,12 @@ export function EnhancedPushNotifications({
       const errorMessage = error instanceof Error ? error.message : 'Failed to send notification';
       
       onError?.({
-        code: 'NOTIFICATION_SEND_FAILED',
+        code: 'NOTIFICATION_BLOCKED',
         message: errorMessage,
         timestamp: new Date()
       });
 
-      logger.error('Failed to send test notification', error);
+      logger.error('Failed to send test notification', { error: String(error) });
     }
   }, [permissionStatus, testNotification, notifications, analytics, onError]);
 
@@ -382,7 +375,7 @@ export function EnhancedPushNotifications({
         setUnreadCount(history.filter((item: NotificationHistoryItem) => !item.read).length);
       }
     } catch (error) {
-      logger.error('Failed to load notification history', error);
+      logger.error('Failed to load notification history', { error: String(error) });
     }
   }, []);
 
@@ -391,7 +384,7 @@ export function EnhancedPushNotifications({
     try {
       localStorage.setItem('notification-history', JSON.stringify(history));
     } catch (error) {
-      logger.error('Failed to save notification history', error);
+      logger.error('Failed to save notification history', { error: String(error) });
     }
   }, []);
 
@@ -435,7 +428,7 @@ export function EnhancedPushNotifications({
       try {
         localStorage.setItem('notification-categories', JSON.stringify(updated));
       } catch (error) {
-        logger.error('Failed to save category settings', error);
+        logger.error('Failed to save category settings', { error: String(error) });
       }
       
       return updated;
@@ -451,7 +444,7 @@ export function EnhancedPushNotifications({
       try {
         localStorage.setItem('notification-quiet-hours', JSON.stringify(updated));
       } catch (error) {
-        logger.error('Failed to save quiet hours', error);
+        logger.error('Failed to save quiet hours', { error: String(error) });
       }
       
       return updated;

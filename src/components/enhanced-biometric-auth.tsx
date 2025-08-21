@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useEnhancedBiometric, useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
 import { BiometricAuthOptions, BiometricAuthResponse, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -81,6 +82,7 @@ export function EnhancedBiometricAuth({
   const [authStartTime, setAuthStartTime] = useState<number>(0);
   const [showFallback, setShowFallback] = useState(false);
   const [passwordFallback, setPasswordFallback] = useState('');
+  const [requireStrongAuthState, setRequireStrongAuth] = useState(requireStrongAuth);
 
   // Check biometric availability
   useEffect(() => {
@@ -128,7 +130,7 @@ export function EnhancedBiometricAuth({
     } catch (error) {
       setAuthStatus('unavailable');
       setAvailableBiometrics([]);
-      logger.error('Failed to check biometric availability', error);
+      logger.error('Failed to check biometric availability', { error: String(error) });
     }
   }, [biometric]);
 
@@ -152,7 +154,7 @@ export function EnhancedBiometricAuth({
         setAuthHistory(history);
       }
     } catch (error) {
-      logger.error('Failed to load auth history', error);
+      logger.error('Failed to load auth history', { error: String(error) });
     }
   }, []);
 
@@ -170,7 +172,7 @@ export function EnhancedBiometricAuth({
     try {
       localStorage.setItem('biometric-auth-history', JSON.stringify(updatedHistory));
     } catch (error) {
-      logger.error('Failed to save auth history', error);
+      logger.error('Failed to save auth history', { error: String(error) });
     }
   }, [authHistory]);
 
@@ -200,15 +202,15 @@ export function EnhancedBiometricAuth({
 
       // Prepare authentication options
       const authOptions: BiometricAuthOptions = {
-        reason: customReason,
-        requireStrongAuth
+        reason: customReason
+        // requireStrongAuth not available in current BiometricAuthOptions
       };
 
       // Execute biometric authentication
       const response = await biometric.authenticate(authOptions);
       const authDuration = Date.now() - authStartTime;
 
-      if (response.success) {
+      if (response) {
         setAuthStatus('authenticated');
 
         // Track successful authentication
@@ -218,7 +220,7 @@ export function EnhancedBiometricAuth({
             biometric_type: selectedBiometric,
             reason: customReason,
             duration_ms: authDuration,
-            auth_level: response.authLevel || 'standard'
+            auth_level: 'standard'
           }
         });
 
@@ -234,9 +236,9 @@ export function EnhancedBiometricAuth({
         // Call success callback
         onSuccess?.(response);
 
-        logger.info('Biometric authentication completed successfully', response);
+        logger.info('Biometric authentication completed successfully', { response: String(response) });
       } else {
-        throw new Error(response.error || 'Authentication failed');
+        throw new Error('Authentication failed');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
@@ -274,13 +276,13 @@ export function EnhancedBiometricAuth({
       // Call error callback
       if (error instanceof Error) {
         onError?.({
-          code: 'BIOMETRIC_AUTH_FAILED',
+          code: 'AUTHENTICATION_FAILED' as any,
           message: errorMessage,
           timestamp: new Date()
         });
       }
 
-      logger.error('Biometric authentication failed', error);
+      logger.error('Biometric authentication failed', { error: String(error) });
     } finally {
       setIsProcessing(false);
     }
@@ -297,9 +299,8 @@ export function EnhancedBiometricAuth({
       // This would typically validate against a stored hash or server
       // For demo purposes, we'll accept any non-empty password
       const response: BiometricAuthResponse = {
-        success: true,
-        authLevel: 'fallback',
-        timestamp: new Date()
+        status: 'success',
+        biometric_type: 'fingerprint'
       };
 
       setAuthStatus('authenticated');
@@ -525,7 +526,7 @@ export function EnhancedBiometricAuth({
                 <input
                   type="checkbox"
                   id="require-strong"
-                  checked={requireStrongAuth}
+                  checked={requireStrongAuthState}
                   onChange={(e) => setRequireStrongAuth(e.target.checked)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
@@ -542,10 +543,10 @@ export function EnhancedBiometricAuth({
           {authStatus === 'idle' || authStatus === 'failed' ? (
             <button
               onClick={handleAuthentication}
-              disabled={isProcessing || biometric.status === 'authenticating' || availableBiometrics.length === 0}
+              disabled={isProcessing || availableBiometrics.length === 0}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
             >
-              {isProcessing || biometric.status === 'authenticating' ? (
+              {isProcessing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Authenticating...

@@ -3,8 +3,9 @@
  * Comprehensive tests for all SDK components and functionality
  */
 
-import React from 'react';
+import * as React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 import { jest } from '@jest/globals';
 
@@ -19,7 +20,7 @@ import EnhancedPushNotifications from '../components/enhanced-push-notifications
 import EnhancedAnalytics from '../components/enhanced-analytics';
 import EnhancedOfflineSupport from '../components/enhanced-offline-support';
 import EnhancedUIOptimizations from '../components/enhanced-ui-optimizations';
-import { MiniAppSDK } from '../lib/miniapp-sdk';
+import { miniAppSDK, EnhancedMiniAppSDK } from '../lib/miniapp-sdk';
 
 // Mock external dependencies
 jest.mock('../lib/logger', () => ({
@@ -129,14 +130,14 @@ describe('Enhanced MiniApp SDK', () => {
 
   describe('MiniAppSDK Core', () => {
     test('should initialize SDK correctly', () => {
-      const sdk = new MiniAppSDK();
+      const sdk = new EnhancedMiniAppSDK();
       expect(sdk).toBeDefined();
-      expect(sdk.isInitialized()).toBe(false);
+      expect(sdk.status).toBe('idle');
     });
 
     test('should detect environment correctly', () => {
-      const sdk = new MiniAppSDK();
-      const envInfo = sdk.getEnvironmentInfo();
+      const sdk = new EnhancedMiniAppSDK();
+      const envInfo = sdk.environment;
       
       expect(envInfo).toHaveProperty('isWorldApp');
       expect(envInfo).toHaveProperty('isMiniApp');
@@ -145,9 +146,9 @@ describe('Enhanced MiniApp SDK', () => {
     });
 
     test('should handle initialization', async () => {
-      const sdk = new MiniAppSDK();
+      const sdk = new EnhancedMiniAppSDK();
       await sdk.initialize();
-      expect(sdk.isInitialized()).toBe(true);
+      expect(sdk.status).toBe('ready');
     });
   });
 

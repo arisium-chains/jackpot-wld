@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useEnhancedPayment, useEnhancedWallet, useEnhancedAnalytics } from '../providers/enhanced-minikit-provider';
 import { PaymentOptions, PaymentResponse, PaymentTransaction, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -95,7 +96,7 @@ export function EnhancedPayment({
       const history = await payment.getHistory();
       setPaymentHistory(history);
     } catch (error) {
-      logger.error('Failed to load payment history', error);
+      logger.error('Failed to load payment history', { error: String(error) });
     }
   }, [payment]);
 
@@ -144,7 +145,7 @@ export function EnhancedPayment({
       const gasEstimate = '0.002'; // ETH
       setEstimatedGas(gasEstimate);
     } catch (error) {
-      logger.error('Failed to estimate gas', error);
+      logger.error('Failed to estimate gas', { error: String(error) });
       setEstimatedGas('Unknown');
     }
   }, [formData]);
@@ -214,7 +215,7 @@ export function EnhancedPayment({
         // Call success callback
         onSuccess?.(response);
 
-        logger.info('Payment completed successfully', response);
+        logger.info('Payment completed successfully', { transaction_id: 'unknown' });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Payment failed';
@@ -240,7 +241,7 @@ export function EnhancedPayment({
         });
       }
 
-      logger.error('Payment failed', error);
+      logger.error('Payment failed', { error: String(error) });
     } finally {
       setIsProcessing(false);
     }

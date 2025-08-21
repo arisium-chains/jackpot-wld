@@ -72,6 +72,7 @@ export function EnhancedWorldID({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [customSignal, setCustomSignal] = useState(signal);
   const [customAction, setCustomAction] = useState(action);
+  const [requireUniqueHumanState, setRequireUniqueHuman] = useState(requireUniqueHuman);
 
   // Load verification history
   useEffect(() => {
@@ -112,7 +113,7 @@ export function EnhancedWorldID({
         setVerificationHistory(history);
       }
     } catch (error) {
-      logger.error('Failed to load verification history', error);
+      logger.error('Failed to load verification history', { error: String(error) });
     }
   }, []);
 
@@ -130,7 +131,7 @@ export function EnhancedWorldID({
     try {
       localStorage.setItem('worldid-verification-history', JSON.stringify(updatedHistory));
     } catch (error) {
-      logger.error('Failed to save verification history', error);
+      logger.error('Failed to save verification history', { error: String(error) });
     }
   }, [verificationHistory]);
 
@@ -167,7 +168,7 @@ export function EnhancedWorldID({
       // Execute verification
       const response = await worldID.verify(verificationOptions);
 
-      if (response.success && response.proof) {
+      if (response && response.proof) {
         setVerificationStatus('verified');
         setCurrentProof(response.proof);
 
@@ -192,9 +193,9 @@ export function EnhancedWorldID({
         // Call success callback
         onSuccess?.(response.proof);
 
-        logger.info('World ID verification completed successfully', response.proof);
+        logger.info('World ID verification completed successfully', { proof: response.proof });
       } else {
-        throw new Error(response.error || 'Verification failed');
+        throw new Error('Verification failed');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
@@ -222,13 +223,13 @@ export function EnhancedWorldID({
       // Call error callback
       if (error instanceof Error) {
         onError?.({
-          code: 'WORLDID_VERIFICATION_FAILED',
+          code: 'VERIFICATION_FAILED' as any,
           message: errorMessage,
           timestamp: new Date()
         });
       }
 
-      logger.error('World ID verification failed', error);
+      logger.error('World ID verification failed', { error: String(error) });
     } finally {
       setIsProcessing(false);
     }
@@ -325,9 +326,7 @@ export function EnhancedWorldID({
               <p><strong>Nullifier:</strong> {formatNullifierHash(currentProof.nullifier_hash)}</p>
               <p><strong>Merkle Root:</strong> {formatNullifierHash(currentProof.merkle_root)}</p>
               <p><strong>Verification Level:</strong> {currentProof.verification_level || 'orb'}</p>
-              {currentProof.action && (
-                <p><strong>Action:</strong> {currentProof.action}</p>
-              )}
+              <p><strong>Action:</strong> {customAction}</p>
             </div>
           </div>
         )}
@@ -377,7 +376,7 @@ export function EnhancedWorldID({
                 <input
                   type="checkbox"
                   id="require-unique"
-                  checked={requireUniqueHuman}
+                  checked={requireUniqueHumanState}
                   onChange={(e) => setRequireUniqueHuman(e.target.checked)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />

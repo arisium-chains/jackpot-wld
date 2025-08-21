@@ -239,12 +239,12 @@ export function EnhancedUIOptimizations({
       const errorMessage = error instanceof Error ? error.message : 'Failed to initialize optimizations';
       
       onError?.({
-        code: 'OPTIMIZATION_INIT_FAILED',
+        code: 'SDK_ERROR' as any, // OPTIMIZATION_INIT_FAILED not available in SDKErrorCode
         message: errorMessage,
         timestamp: new Date()
       });
       
-      logger.error('Failed to initialize optimizations', error);
+      logger.error('Failed to initialize optimizations', { error: String(error) });
     } finally {
       setIsOptimizing(false);
     }

@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useEnhancedWallet, useEnhancedStatus, useEnhancedAnalytics } from '../providers/enhanced-minikit-provider';
 import { WalletAuthOptions, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -80,7 +81,7 @@ export function EnhancedWalletConnect({
       const walletBalance = await wallet.getBalance();
       setBalance(walletBalance);
     } catch (error) {
-      logger.error('Failed to load wallet balance', error);
+      logger.error('Failed to load wallet balance', { error: String(error) });
       setBalance('Error');
     }
   }, [wallet]);
@@ -104,8 +105,16 @@ export function EnhancedWalletConnect({
         }
       });
 
+      // Fetch nonce for authentication
+      const nonceResponse = await fetch('/api/auth/nonce');
+      if (!nonceResponse.ok) {
+        throw new Error('Failed to fetch nonce');
+      }
+      const { nonce } = await nonceResponse.json();
+
       // Prepare auth options
       const authOptions: WalletAuthOptions = {
+        nonce,
         statement: 'Connect to Enhanced MiniApp',
         uri: window.location.origin,
         version: '1',
@@ -151,7 +160,7 @@ export function EnhancedWalletConnect({
         }
       });
       
-      logger.error('Enhanced wallet connection failed', error);
+      logger.error('Enhanced wallet connection failed', { error: String(error) });
     } finally {
       setIsConnecting(false);
     }
@@ -176,7 +185,7 @@ export function EnhancedWalletConnect({
       onDisconnect?.();
       logger.info('Enhanced wallet disconnected');
     } catch (error) {
-      logger.error('Enhanced wallet disconnection failed', error);
+      logger.error('Enhanced wallet disconnection failed', { error: String(error) });
     }
   }, [wallet, analytics, onDisconnect]);
 
@@ -199,7 +208,7 @@ export function EnhancedWalletConnect({
         await loadBalance();
       }
     } catch (error) {
-      logger.error('Chain switch failed', error);
+      logger.error('Chain switch failed', { error: String(error) });
       setConnectionError('Failed to switch chain');
     }
   }, [wallet, analytics, showBalance, loadBalance]);

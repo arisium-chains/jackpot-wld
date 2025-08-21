@@ -66,7 +66,7 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
   autoOptimize = true,
   onError
 }) => {
-  const { isInitialized, error: sdkError } = useEnhancedMiniKit();
+  const { isReady, error: sdkError } = useEnhancedMiniKit();
   const [activeFeature, setActiveFeature] = useState<string>('overview');
   const [featureStatuses, setFeatureStatuses] = useState<Record<string, 'available' | 'unavailable' | 'error'>>({});
   const [performanceOptimizer, setPerformanceOptimizer] = useState<PerformanceOptimizer | null>(null);
@@ -185,7 +185,7 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
       for (const feature of features) {
         try {
           // Basic availability check based on SDK initialization
-          if (!isInitialized) {
+          if (!isReady) {
             statuses[feature.id] = 'unavailable';
             continue;
           }
@@ -221,7 +221,7 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
     };
 
     checkFeatureAvailability();
-  }, [isInitialized]);
+  }, [isReady]);
 
   const getStatusBadge = (status: 'available' | 'unavailable' | 'error') => {
     switch (status) {
@@ -261,12 +261,12 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="font-medium">SDK Initialized</span>
                   <div className="flex items-center space-x-2">
-                    {isInitialized ? (
+                    {isReady ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : (
                       <AlertTriangle className="w-5 h-5 text-red-500" />
                     )}
-                    <span>{isInitialized ? 'Yes' : 'No'}</span>
+                    <span>{isReady ? 'Yes' : 'No'}</span>
                   </div>
                 </div>
                 
@@ -376,7 +376,7 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          {isInitialized ? (
+          {isReady ? (
             <Badge variant="default" className="bg-green-100 text-green-800">
               <CheckCircle className="w-3 h-3 mr-1" />
               SDK Ready
