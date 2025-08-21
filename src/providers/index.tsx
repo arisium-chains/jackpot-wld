@@ -36,14 +36,22 @@ function MiniKitProvider({ children }: { children: ReactNode }) {
     // Initialize MiniKit
     if (typeof window !== 'undefined') {
       const appId = process.env.NEXT_PUBLIC_MINIAPP_ID || process.env.NEXT_PUBLIC_WORLD_APP_ID;
-      if (appId) {
+      console.log('MiniKit: Attempting to install with appId:', appId);
+      
+      if (appId && appId !== '__FROM_DEV_PORTAL__' && appId !== 'app_staging_123456789') {
         try {
           MiniKit.install(appId);
-          setIsInstalled(true);
+          // Check if MiniKit is actually installed after installation
+          const installed = MiniKit.isInstalled();
+          console.log('MiniKit: Installation result:', installed);
+          setIsInstalled(installed);
         } catch (error) {
           console.warn('MiniKit installation failed:', error);
           setIsInstalled(false);
         }
+      } else {
+        console.warn('MiniKit: Invalid or missing app ID:', appId);
+        setIsInstalled(false);
       }
     }
   }, []);
