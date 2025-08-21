@@ -60,7 +60,7 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
       isLoading: false
     };
     this._syncStatus = {
-      isOnline: navigator.onLine,
+      isOnline: typeof window !== 'undefined' && typeof navigator !== 'undefined' ? navigator.onLine : true,
       pendingItems: 0,
       isSyncing: false
     };
