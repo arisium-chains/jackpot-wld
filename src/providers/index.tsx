@@ -6,6 +6,7 @@ import { config } from '../lib/wagmi';
 import { WalletProvider } from '../contexts/WalletContext';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { ReactNode, useState, useEffect, createContext, useContext } from 'react';
+import { MiniAppProvider } from './miniapp-provider';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -87,13 +88,15 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <MiniKitProvider>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          <WalletProvider>
-            {children}
-          </WalletProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
+      <MiniAppProvider>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            <WalletProvider>
+              {children}
+            </WalletProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </MiniAppProvider>
     </MiniKitProvider>
   );
 }

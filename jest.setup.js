@@ -1,9 +1,9 @@
-import '@testing-library/jest-dom'
-import { TextEncoder, TextDecoder } from 'util'
+import "@testing-library/jest-dom";
+import { TextEncoder, TextDecoder } from "util";
 
 // Polyfills for Node.js environment
-global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 // Mock MiniKit globally for tests
 global.MiniKit = {
@@ -11,17 +11,42 @@ global.MiniKit = {
   commandsAsync: {
     walletAuth: jest.fn(),
   },
-  walletAddress: '0x1234567890123456789012345678901234567890',
-}
+  walletAddress: "0x1234567890123456789012345678901234567890",
+};
 
 // Mock window.MiniKit
-Object.defineProperty(window, 'MiniKit', {
+Object.defineProperty(window, "MiniKit", {
   value: global.MiniKit,
   writable: true,
-})
+});
 
 // Mock fetch globally
-global.fetch = jest.fn()
+global.fetch = jest.fn();
 
 // Mock process.env
-process.env.NEXT_PUBLIC_DEV_MODE = 'false'
+process.env.NEXT_PUBLIC_DEV_MODE = "false";
+
+// Mock clipboard API to prevent userEvent errors
+Object.defineProperty(navigator, "clipboard", {
+  value: {
+    writeText: jest.fn(() => Promise.resolve()),
+    readText: jest.fn(() => Promise.resolve("")),
+  },
+  writable: true,
+  configurable: true, // Allow redefinition
+});
+
+// Mock window.matchMedia
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // Deprecated
+    removeListener: jest.fn(), // Deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});

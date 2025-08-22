@@ -1,9 +1,19 @@
 'use client';
 
 import { PoolStatsDashboard, UserAccountStats, LotteryDrawManager, WalletConnect } from '../components';
+import WalletManager from '../components/wallet/wallet-manager';
+import WorldIDManager from '../components/worldid/worldid-manager';
+import PaymentManager from '../components/payment/payment-manager';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useWallet, useWorldID } from '../providers/miniapp-provider';
+import { Play } from 'lucide-react';
 
 export default function Home() {
+  const wallet = useWallet();
+  const worldId = useWorldID();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto py-8">
@@ -17,12 +27,61 @@ export default function Home() {
           <p className="text-gray-500">
             Deposit WLD tokens, earn yield, and win prizes!
           </p>
+          
+          {/* Status Badges */}
+          <div className="flex justify-center space-x-2 mt-4">
+            <Badge variant={wallet.isConnected ? "default" : "secondary"}>
+              {wallet.isConnected ? '✓ Wallet Connected' : '○ Wallet Disconnected'}
+            </Badge>
+            <Badge variant={worldId.isVerified ? "default" : "secondary"}>
+              {worldId.isVerified ? '✓ World ID Verified' : '○ World ID Pending'}
+            </Badge>
+          </div>
         </div>
 
-        {/* Wallet Connection */}
-        <WalletConnect className="mb-8" />
+        {/* Demo Link */}
+        <div className="text-center mb-8">
+          <Link href="/demo">
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Play className="w-4 h-4 mr-2" />
+              Try Interactive Demo
+            </Button>
+          </Link>
+        </div>
 
-        {/* Navigation Cards */}
+        {/* Simplified Components Integration */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Wallet Manager */}
+          <WalletManager 
+            showBalance={true}
+            showChainInfo={true}
+            autoConnect={true}
+          />
+          
+          {/* World ID Manager */}
+          <WorldIDManager 
+            action="lottery-eligibility"
+            autoVerify={false}
+            showHistory={false}
+          />
+        </div>
+
+        {/* Payment Manager */}
+        <div className="mb-8">
+          <PaymentManager 
+            defaultTab="deposit"
+            showHistory={true}
+            minAmount="0.001"
+          />
+        </div>
+
+        {/* Legacy Components (for comparison) */}
+        <div className="border-t pt-8 mt-8">
+          <h2 className="text-2xl font-semibold mb-4 text-center text-gray-700">Legacy Components</h2>
+          <p className="text-center text-gray-600 mb-6">Compare with the original implementation</p>
+          
+          {/* Legacy Wallet Connection */}
+          <WalletConnect className="mb-8" />
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Link href="/deposit" className="block">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-200">
@@ -55,14 +114,15 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Pool Statistics Dashboard */}
-        <PoolStatsDashboard className="mb-8" />
+          {/* Pool Statistics Dashboard */}
+          <PoolStatsDashboard className="mb-8" />
 
-        {/* User Account Statistics */}
-        <UserAccountStats className="mb-8" />
+          {/* User Account Statistics */}
+          <UserAccountStats className="mb-8" />
 
-        {/* Lottery Draw Manager */}
-        <LotteryDrawManager className="mb-8" />
+          {/* Lottery Draw Manager */}
+          <LotteryDrawManager className="mb-8" />
+        </div>
 
         {/* App Info */}
         <div className="space-y-6">
