@@ -19,14 +19,14 @@ const localhost = {
 } as const;
 
 export const config = createConfig({
-  chains: [worldchain, worldchainSepolia, localhost],
+  chains: [worldchainSepolia, worldchain, localhost],
   connectors: [
     injected(),
   ],
   transports: {
-    [worldchain.id]: http(),
-    [worldchainSepolia.id]: http(),
-    [localhost.id]: http('http://127.0.0.1:8545'),
+    [worldchain.id]: http('https://worldchain-mainnet.g.alchemy.com/public'),
+    [worldchainSepolia.id]: http('https://worldchain-sepolia.g.alchemy.com/public'),
+    [localhost.id]: http(),
   },
 });
 

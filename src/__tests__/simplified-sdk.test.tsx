@@ -38,19 +38,22 @@ jest.mock("../lib/logger", () => ({
 
 jest.mock("@worldcoin/minikit-js", () => ({
   MiniKit: {
-    install: jest.fn().mockResolvedValue(true),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    install: (jest.fn() as any).mockResolvedValue(true),
     commandsAsync: {
-      walletAuth: jest.fn().mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      walletAuth: (jest.fn() as any).mockResolvedValue({
         finalPayload: {
           status: "success",
           message: "mock message",
           signature: "mock signature",
         },
       }),
-      pay: jest.fn().mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pay: (jest.fn() as any).mockResolvedValue({
         finalPayload: {
           status: "success",
-          transaction_hash: "0xmocktransactionhash",
+          transaction_status: "0xmocktransactionhash",
         },
       }),
     },
@@ -61,7 +64,7 @@ jest.mock("@worldcoin/minikit-js", () => ({
 }));
 
 jest.mock("@worldcoin/idkit", () => ({
-  IDKitWidget: ({ onSuccess }: { onSuccess: (proof: any) => void }) => (
+  IDKitWidget: ({ onSuccess }: { onSuccess: (proof: unknown) => void }) => (
     <div data-testid="idkit-widget">
       <button
         onClick={() =>
@@ -92,7 +95,8 @@ jest.mock("sonner", () => ({
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+global.fetch = jest.fn() as any;
 
 // Mock window.MiniKit
 Object.defineProperty(window, "MiniKit", {
@@ -105,15 +109,16 @@ Object.defineProperty(window, "MiniKit", {
 // Mock navigator.clipboard
 Object.defineProperty(navigator, "clipboard", {
   value: {
-    writeText: jest.fn().mockResolvedValue(undefined),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    writeText: (jest.fn() as any).mockResolvedValue(undefined),
   },
   writable: true,
 });
 
 // Mock the hooks directly for better test control
 jest.mock("../providers/miniapp-provider", () => {
-  const originalModule = jest.requireActual("../providers/miniapp-provider");
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const originalModule = jest.requireActual("../providers/miniapp-provider") as any;
   return {
     ...originalModule,
     useWallet: jest.fn(),
@@ -137,14 +142,18 @@ const renderWithProvider = (component: React.ReactElement) => {
 describe("Simplified MiniApp SDK", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (fetch as jest.Mock).mockResolvedValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (fetch as any).mockResolvedValue({
       json: () =>
         Promise.resolve({ nonce: "mock-nonce", ok: true, success: true }),
     });
 
     // Set up mock implementations for the hooks
-    const { useWallet, useWorldID, usePayment, useLottery, useMiniApp } =
-      jest.requireMock("../providers/miniapp-provider");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { useWallet, useWorldID, usePayment, useLottery, useMiniApp } = jest.requireMock(
+      "../providers/miniapp-provider"
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) as any;
 
     useWallet.mockReturnValue({
       isConnected: true,
@@ -153,10 +162,14 @@ describe("Simplified MiniApp SDK", () => {
       balance: "100.0",
       chainId: 1,
       nonce: "123",
-      connect: jest.fn().mockResolvedValue(undefined),
-      disconnect: jest.fn().mockResolvedValue(undefined),
-      getBalance: jest.fn().mockResolvedValue("100.0"),
-      switchChain: jest.fn().mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      connect: (jest.fn() as any).mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      disconnect: (jest.fn() as any).mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getBalance: (jest.fn() as any).mockResolvedValue("100.0"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      switchChain: (jest.fn() as any).mockResolvedValue(undefined),
     });
 
     useWorldID.mockReturnValue({
@@ -167,23 +180,29 @@ describe("Simplified MiniApp SDK", () => {
       merkleRoot: "0x789",
       proof: null,
       actionId: "test-action",
-      verify: jest.fn().mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      verify: (jest.fn() as any).mockResolvedValue({
         merkle_root: "0x789",
         nullifier_hash: "0x456",
         proof: "0x123",
         verification_level: "orb",
       }),
-      reset: jest.fn().mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      reset: (jest.fn() as any).mockResolvedValue(undefined),
     });
 
     usePayment.mockReturnValue({
       isProcessing: false,
       balance: "100.0",
       history: [],
-      sendWLD: jest.fn().mockResolvedValue("0xmocktransactionhash"),
-      deposit: jest.fn().mockResolvedValue("0xmocktransactionhash"),
-      withdraw: jest.fn().mockResolvedValue("0xmocktransactionhash"),
-      getHistory: jest.fn().mockResolvedValue([]),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sendWLD: (jest.fn() as any).mockResolvedValue("0xmocktransactionhash"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      deposit: (jest.fn() as any).mockResolvedValue("0xmocktransactionhash"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      withdraw: (jest.fn() as any).mockResolvedValue("0xmocktransactionhash"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getHistory: (jest.fn() as any).mockResolvedValue([]),
     });
 
     useLottery.mockReturnValue({
@@ -202,9 +221,12 @@ describe("Simplified MiniApp SDK", () => {
         totalWinnings: "0.0",
         lastActivity: new Date(),
       },
-      checkEligibility: jest.fn().mockResolvedValue(true),
-      getPoolStats: jest.fn().mockResolvedValue({}),
-      getUserStats: jest.fn().mockResolvedValue({}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      checkEligibility: (jest.fn() as any).mockResolvedValue(true),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getPoolStats: (jest.fn() as any).mockResolvedValue({}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getUserStats: (jest.fn() as any).mockResolvedValue({}),
     });
 
     useMiniApp.mockReturnValue({
@@ -259,7 +281,8 @@ describe("Simplified MiniApp SDK", () => {
       lottery: useLottery(),
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
-      initialize: jest.fn().mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialize: (jest.fn() as any).mockResolvedValue(undefined),
     });
   });
 

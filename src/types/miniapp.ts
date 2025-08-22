@@ -28,10 +28,12 @@ export interface WalletState {
 }
 
 // World ID State
+export type VerificationLevel = "orb" | "device";
+
 export interface WorldIDState {
   isVerified: boolean;
   proof: ISuccessResult | null;
-  verificationLevel: "orb" | "device" | null;
+  verificationLevel: VerificationLevel | null;
   isVerifying: boolean;
 }
 
@@ -151,6 +153,7 @@ export interface MiniAppConfig {
 export type MiniAppEvent =
   | "sdk:ready"
   | "sdk:error"
+  | "wallet:connecting"
   | "wallet:connected"
   | "wallet:disconnected"
   | "wallet:chainChanged"
@@ -163,13 +166,13 @@ export type MiniAppEvent =
   | "lottery:prizeWon";
 
 // Event Listener
-export type EventListener<T = any> = (data: T) => void;
+export type EventListener<T = unknown> = (data: T) => void;
 
 // Error Types
 export interface MiniAppError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
 }
 

@@ -4,7 +4,7 @@
  */
 
 import { MiniKit, Tokens } from '@worldcoin/minikit-js';
-import { ISuccessResult } from '@worldcoin/idkit';
+import { ISuccessResult, VerificationLevel } from '@worldcoin/idkit';
 import {
   SDKStatus,
   EnvironmentInfo,
@@ -116,7 +116,23 @@ export class SimplifiedMiniAppSDK {
       this._state.wallet.isConnecting = true;
       this.emit('wallet:connecting', {});
 
+      // Handle development environment gracefully
       if (!this.isInstalled) {
+        if (this.environment.isDevelopment) {
+          logger.warn('MiniKit not available in development environment - using mock wallet');
+          // Mock wallet connection for development
+          const mockAddress = '0x1234567890123456789012345678901234567890';
+          this._state.wallet = {
+            isConnected: true,
+            address: mockAddress,
+            balance: '1000.0',
+            chainId: 4801, // World Chain Sepolia default
+            isConnecting: false
+          };
+          logger.info('Mock wallet connected for development', { address: mockAddress });
+          this.emit('wallet:connected', { address: mockAddress });
+          return;
+        }
         throw new Error('MiniKit not available');
       }
 
@@ -155,7 +171,7 @@ export class SimplifiedMiniAppSDK {
         isConnected: true,
         address,
         balance: '0', // Will be updated by getBalance
-        chainId: 1, // Default, will be updated
+        chainId: 4801, // World Chain Sepolia default
         isConnecting: false
       };
 
@@ -178,7 +194,7 @@ export class SimplifiedMiniAppSDK {
       isConnected: false,
       address: null,
       balance: '0',
-      chainId: 1,
+      chainId: 4801, // World Chain Sepolia
       isConnecting: false
     };
     
@@ -192,6 +208,13 @@ export class SimplifiedMiniAppSDK {
         return '0';
       }
 
+      // In development mode or when MiniKit is not available, return mock balance
+      if (this.environment.isDevelopment || !this.isInstalled) {
+        const balance = '1000.0';
+        this._state.wallet.balance = balance;
+        return balance;
+      }
+
       // For now, return mock balance - in real implementation, 
       // this would fetch from blockchain
       const balance = '1000.0';
@@ -199,7 +222,7 @@ export class SimplifiedMiniAppSDK {
       
       return balance;
     } catch (error) {
-      logger.error('Failed to get wallet balance', { error });
+      logger.error('Failed to get wallet balance', { error: error instanceof Error ? error.message : String(error) });
       return '0';
     }
   }
@@ -231,7 +254,7 @@ export class SimplifiedMiniAppSDK {
         merkle_root: '0x123...',
         nullifier_hash: '0x456...',
         proof: '0x789...',
-        verification_level: 'orb'
+        verification_level: 'orb' as VerificationLevel
       };
 
       this._state.worldId = {
@@ -296,7 +319,7 @@ export class SimplifiedMiniAppSDK {
         throw new Error(response.finalPayload.error_code || 'Payment failed');
       }
 
-      const transactionHash = response?.finalPayload?.transaction_hash || this.generateTransactionId();
+      const transactionHash = response?.finalPayload?.transaction_status || this.generateTransactionId();
 
       // Create transaction record
       const transaction: PaymentTransaction = {
@@ -444,13 +467,13 @@ export class SimplifiedMiniAppSDK {
     }
   }
 
-  private emit(event: MiniAppEvent, data: any): void {
+  private emit(event: MiniAppEvent, data: unknown): void {
     const listeners = this._eventListeners.get(event) || [];
     listeners.forEach(listener => {
       try {
-        listener(data);
+        listener(data as Parameters<typeof listener>[0]);
       } catch (error) {
-        logger.error('Event listener error', { event, error });
+        logger.error('Event listener error', { event, error: error instanceof Error ? error.message : String(error) });
       }
     });
   }
@@ -465,7 +488,7 @@ export class SimplifiedMiniAppSDK {
         isConnected: false,
         address: null,
         balance: '0',
-        chainId: 1,
+        chainId: 4801, // World Chain Sepolia
         isConnecting: false
       },
       worldId: {

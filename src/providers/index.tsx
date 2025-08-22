@@ -37,7 +37,16 @@ function MiniKitProvider({ children }: { children: ReactNode }) {
     // Initialize MiniKit
     if (typeof window !== 'undefined') {
       const appId = process.env.NEXT_PUBLIC_MINIAPP_ID || process.env.NEXT_PUBLIC_WORLD_APP_ID;
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
       console.log('MiniKit: Attempting to install with appId:', appId);
+      
+      // In development mode, gracefully handle MiniKit unavailability
+      if (isDevelopment) {
+        console.log('MiniKit: Running in development mode - using mock installation');
+        setIsInstalled(true); // Mock installation for development
+        return;
+      }
       
       if (appId && appId !== '__FROM_DEV_PORTAL__' && appId !== 'app_staging_123456789') {
         try {

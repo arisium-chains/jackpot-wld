@@ -118,7 +118,7 @@ export function EnhancedWalletConnect({
         statement: 'Connect to Enhanced MiniApp',
         uri: window.location.origin,
         version: '1',
-        chainId: 1,
+        chainId: 4801, // World Chain Sepolia
         expirationTime: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
         ...customAuthOptions
       };

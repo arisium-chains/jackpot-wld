@@ -171,22 +171,22 @@ export function MiniAppProvider({
     const initializeSDK = async () => {
       try {
         // Set up event listeners
-        miniAppSDK.addEventListener("sdk:ready", handleSDKReady);
-        miniAppSDK.addEventListener("sdk:error", handleSDKError);
-        miniAppSDK.addEventListener("wallet:connected", handleWalletConnected);
+        miniAppSDK.addEventListener("sdk:ready", handleSDKReady as EventListener);
+        miniAppSDK.addEventListener("sdk:error", handleSDKError as EventListener);
+        miniAppSDK.addEventListener("wallet:connected", handleWalletConnected as EventListener);
         miniAppSDK.addEventListener(
           "wallet:disconnected",
-          handleWalletDisconnected
+          handleWalletDisconnected as EventListener
         );
-        miniAppSDK.addEventListener("worldid:verified", handleWorldIDVerified);
-        miniAppSDK.addEventListener("payment:sent", handlePaymentSent);
+        miniAppSDK.addEventListener("worldid:verified", handleWorldIDVerified as EventListener);
+        miniAppSDK.addEventListener("payment:sent", handlePaymentSent as EventListener);
 
         // Initialize SDK
         if (config.autoConnect) {
           await miniAppSDK.initialize();
         }
       } catch (error) {
-        logger.error("Failed to initialize MiniApp SDK", { error });
+        logger.error("Failed to initialize MiniApp SDK", { error: String(error) });
         dispatch({ type: "SET_ERROR", payload: "Failed to initialize SDK" });
       }
     };
@@ -195,15 +195,15 @@ export function MiniAppProvider({
 
     // Cleanup event listeners
     return () => {
-      miniAppSDK.removeEventListener("sdk:ready", handleSDKReady);
-      miniAppSDK.removeEventListener("sdk:error", handleSDKError);
-      miniAppSDK.removeEventListener("wallet:connected", handleWalletConnected);
+      miniAppSDK.removeEventListener("sdk:ready", handleSDKReady as EventListener);
+      miniAppSDK.removeEventListener("sdk:error", handleSDKError as EventListener);
+      miniAppSDK.removeEventListener("wallet:connected", handleWalletConnected as EventListener);
       miniAppSDK.removeEventListener(
         "wallet:disconnected",
-        handleWalletDisconnected
+        handleWalletDisconnected as EventListener
       );
-      miniAppSDK.removeEventListener("worldid:verified", handleWorldIDVerified);
-      miniAppSDK.removeEventListener("payment:sent", handlePaymentSent);
+      miniAppSDK.removeEventListener("worldid:verified", handleWorldIDVerified as EventListener);
+      miniAppSDK.removeEventListener("payment:sent", handlePaymentSent as EventListener);
     };
   }, [
     config.autoConnect,

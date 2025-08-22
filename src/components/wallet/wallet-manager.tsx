@@ -56,11 +56,17 @@ interface ChainInfo {
 }
 
 const SUPPORTED_CHAINS: Record<number, ChainInfo> = {
-  1: {
-    id: 1,
-    name: "Ethereum Mainnet",
+  4801: {
+    id: 4801,
+    name: "World Chain Sepolia",
     nativeCurrency: { symbol: "ETH", decimals: 18 },
-    blockExplorer: "https://etherscan.io",
+    blockExplorer: "https://worldchain-sepolia.blockscout.com",
+  },
+  480: {
+    id: 480,
+    name: "World Chain",
+    nativeCurrency: { symbol: "ETH", decimals: 18 },
+    blockExplorer: "https://worldscan.org",
   },
   11155111: {
     id: 11155111,
@@ -68,11 +74,11 @@ const SUPPORTED_CHAINS: Record<number, ChainInfo> = {
     nativeCurrency: { symbol: "ETH", decimals: 18 },
     blockExplorer: "https://sepolia.etherscan.io",
   },
-  480: {
-    id: 480,
-    name: "World Chain",
+  1: {
+    id: 1,
+    name: "Ethereum Mainnet",
     nativeCurrency: { symbol: "ETH", decimals: 18 },
-    blockExplorer: "https://worldscan.org",
+    blockExplorer: "https://etherscan.io",
   },
 };
 

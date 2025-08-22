@@ -162,7 +162,7 @@ export function WorldIDManager({
           const history = JSON.parse(savedHistory);
           setVerificationHistory(history);
         } catch (error) {
-          logger.error("Failed to load verification history", { error });
+          logger.error("Failed to load verification history", { error: error instanceof Error ? error.message : String(error) });
         }
       }
     }
@@ -506,7 +506,7 @@ export function WorldIDManager({
       {/* IDKit Widget */}
       {isWidgetOpen && (
         <IDKitWidget
-          app_id={process.env.NEXT_PUBLIC_WORLD_APP_ID!}
+          app_id={(process.env.NEXT_PUBLIC_WORLD_APP_ID || 'app_staging_test') as `app_${string}`}
           action={action}
           signal={signal}
           onSuccess={handleVerificationSuccess}
