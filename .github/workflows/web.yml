@@ -46,7 +46,6 @@ jobs:
 
       - name: Run TypeScript type check
         run: npm run type-check
-        continue-on-error: true
 
   build:
     name: Build Application
@@ -65,8 +64,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build application
-        run: npm run build
+      - name: Validate and build application
+        run: npm run build:validate
         env:
           NEXT_PUBLIC_WORLD_APP_ID: ${{ secrets.NEXT_PUBLIC_WORLD_APP_ID }}
           NEXT_PUBLIC_WORLD_ID_ACTION_ID: ${{ secrets.NEXT_PUBLIC_WORLD_ID_ACTION_ID }}

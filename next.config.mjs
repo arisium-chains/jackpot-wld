@@ -3,9 +3,13 @@ import { withSentryConfig } from '@sentry/nextjs';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // Enable ESLint checking during builds for better code quality
+    ignoreDuringBuilds: false,
+    dirs: ['src', 'pages', 'components', 'lib', 'utils'],
+  },
+  typescript: {
+    // Enable TypeScript checking during builds
+    ignoreBuildErrors: false,
   },
   experimental: {
     // Enable experimental features if needed
