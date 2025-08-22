@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   title: "JackpotWLD - World Pool Together",
   description: "Earn yield and win prizes with World ID verification on Worldchain",
   manifest: "/manifest.json",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   other: {
     "minikit:app-id": process.env.NEXT_PUBLIC_WORLD_APP_ID || "",
   },

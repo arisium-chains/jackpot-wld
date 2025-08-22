@@ -147,7 +147,9 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
         throw new Error(finalPayload?.error_code ?? 'WalletAuthError');
       }
 
-      const addr = window.MiniKit?.walletAddress ?? null
+      // Extract wallet address from finalPayload or fallback to MiniKit instance
+      const addr = (finalPayload as { address?: string }).address || window.MiniKit?.walletAddress;
+      
       if (!addr) {
         logger.walletAuth('wallet_address_missing', {});
         throw new Error('WalletAddressMissing');

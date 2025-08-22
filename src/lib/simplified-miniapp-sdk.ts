@@ -140,15 +140,23 @@ export class SimplifiedMiniAppSDK {
       const { nonce } = await (await fetch('/api/siwe/nonce')).json();
 
       // Request wallet authentication
-      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({ nonce });
+      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
+        nonce,
+        requestId: '0',
+        expirationTime: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
+        notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
+        statement: 'Sign in to the lottery app',
+      });
 
-      if (finalPayload?.status === 'error') {
-        throw new Error(finalPayload?.error_code ?? 'Wallet authentication failed');
+      if (finalPayload.status === 'error') {
+        throw new Error(`Wallet authentication failed: ${finalPayload.error_code || 'Unknown error'}`);
       }
 
-      const address = window.MiniKit?.walletAddress;
+      // Extract wallet address from finalPayload or fallback to MiniKit instance
+      const address = (finalPayload as { address?: string }).address || window.MiniKit?.walletAddress;
+      
       if (!address) {
-        throw new Error('Wallet address not available');
+        throw new Error('Wallet address not available in authentication response');
       }
 
       // Optional signature verification
