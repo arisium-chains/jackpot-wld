@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { v4 as uuidv4 } from 'uuid';
 
 export const runtime = 'edge';
 
@@ -15,95 +17,185 @@ function mockVerifySignature(message: string, signature: string, address: string
  * As specified in World App wallet-auth documentation
  */
 export async function POST(request: NextRequest) {
+  const requestId = uuidv4();
+  
   try {
     const { message, signature, address, nonce } = await request.json();
+    
+    logger.apiRequest('POST', '/api/auth/verify', {
+      hasMessage: !!message,
+      hasSignature: !!signature,
+      hasAddress: !!address,
+      hasNonce: !!nonce,
+      component: 'AuthVerifyAPI',
+      action: 'siweVerificationRequest',
+      requestId
+    });
 
     // Validate required fields
     if (!message || !signature || !address || !nonce) {
-       return NextResponse.json(
-         { success: false, error: 'Missing required fields: message, signature, address, nonce' },
-         { status: 400 }
-       );
+      const errorResponse = { success: false, error: 'Missing required fields: message, signature, address, nonce' };
+      
+      logger.apiResponse('POST', '/api/auth/verify', 400, {
+        ...errorResponse,
+        component: 'AuthVerifyAPI',
+        action: 'validationError',
+        requestId
+      });
+      
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
     // Log the incoming message for debugging
-    console.log('Received SIWE message:', message);
-    console.log('Received signature:', signature);
-    console.log('Received address:', address);
-    console.log('Received nonce:', nonce);
+    logger.info('Processing SIWE verification request', {
+      component: 'AuthVerifyAPI',
+      action: 'siweMessageReceived',
+      requestId,
+      messageLength: message.length,
+      signatureLength: signature.length,
+      address: address.substring(0, 6) + '...' + address.substring(address.length - 4),
+      nonceLength: nonce.length
+    });
     
     // Parse the SIWE message to extract components
     const siweMessage = parseSiweMessage(message);
     if (!siweMessage) {
-      console.log('Failed to parse SIWE message');
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid SIWE message format',
-          message: 'The authentication message format is invalid',
-          debug: { receivedMessage: message }
-        },
-        { status: 400 }
-      );
+      const errorResponse = { 
+        success: false, 
+        error: 'Invalid SIWE message format',
+        message: 'The authentication message format is invalid',
+        debug: { receivedMessage: message }
+      };
+      
+      logger.apiResponse('POST', '/api/auth/verify', 400, {
+        ...errorResponse,
+        component: 'AuthVerifyAPI',
+        action: 'siweParsingError',
+        requestId
+      });
+      
+      return NextResponse.json(errorResponse, { status: 400 });
     }
     
-    console.log('Parsed SIWE message:', siweMessage);
+    logger.info('Successfully parsed SIWE message', {
+      component: 'AuthVerifyAPI',
+      action: 'siweMessageParsed',
+      requestId,
+      domain: siweMessage.domain,
+      chainId: siweMessage.chainId,
+      version: siweMessage.version
+    });
 
     // Use mock verification for development (Edge runtime compatible)
+    logger.info('Starting signature verification', {
+      component: 'AuthVerifyAPI',
+      action: 'signatureVerificationStart',
+      requestId,
+      signatureFormat: signature.startsWith('0x') ? 'valid' : 'invalid',
+      addressFormat: address.startsWith('0x') ? 'valid' : 'invalid'
+    });
+    
     const isValidSignature = mockVerifySignature(message, signature, address);
     
     if (!isValidSignature) {
-      console.error('Signature verification failed:', { signature, address, message });
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid signature format',
-          message: 'The signature format is invalid. Please try connecting your wallet again.' 
-        },
-        { status: 400 }
-      );
+      const errorResponse = { 
+        success: false, 
+        error: 'Invalid signature format',
+        message: 'The signature format is invalid. Please try connecting your wallet again.' 
+      };
+      
+      logger.apiResponse('POST', '/api/auth/verify', 400, {
+        ...errorResponse,
+        component: 'AuthVerifyAPI',
+        action: 'signatureVerificationFailed',
+        requestId,
+        signatureLength: signature.length,
+        addressLength: address.length
+      });
+      
+      return NextResponse.json(errorResponse, { status: 400 });
     }
+    
+    logger.info('Signature verification successful', {
+      component: 'AuthVerifyAPI',
+      action: 'signatureVerificationSuccess',
+      requestId
+    });
 
     // Validate SIWE message components
+    logger.info('Starting SIWE message validation', {
+      component: 'AuthVerifyAPI',
+      action: 'siweValidationStart',
+      requestId
+    });
+    
     const validationResult = validateSiweMessage(siweMessage);
     if (!validationResult.valid) {
-      console.log('SIWE validation failed:', validationResult.error);
-      console.log('SIWE message being validated:', siweMessage);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: validationResult.error,
-          message: 'Authentication message validation failed',
-          debug: { siweMessage, validationError: validationResult.error }
-        },
-        { status: 400 }
-      );
+      const errorResponse = { 
+        success: false, 
+        error: validationResult.error,
+        message: 'Authentication message validation failed',
+        debug: { siweMessage, validationError: validationResult.error }
+      };
+      
+      logger.apiResponse('POST', '/api/auth/verify', 400, {
+        ...errorResponse,
+        component: 'AuthVerifyAPI',
+        action: 'siweValidationFailed',
+        requestId,
+        validationError: validationResult.error
+      });
+      
+      return NextResponse.json(errorResponse, { status: 400 });
     }
+    
+    logger.info('SIWE message validation successful', {
+      component: 'AuthVerifyAPI',
+      action: 'siweValidationSuccess',
+      requestId
+    });
 
     // In production, you should:
     // 1. Verify the nonce was previously issued and not reused
     // 2. Check expiration time
     // 3. Validate the domain matches your application
     // 4. Store the authentication state in a session or JWT
-
-    return NextResponse.json({
+    
+    const successResponse = {
       success: true,
       address: address,
       message: siweMessage,
       timestamp: Date.now()
+    };
+    
+    logger.apiResponse('POST', '/api/auth/verify', 200, {
+      ...successResponse,
+      component: 'AuthVerifyAPI',
+      action: 'authenticationSuccess',
+      requestId,
+      authenticatedAddress: address.substring(0, 6) + '...' + address.substring(address.length - 4)
     });
+
+    return NextResponse.json(successResponse);
   } catch (error) {
-    console.error('Authentication verification error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        message: 'Authentication service encountered an error. Please try again.' 
-      },
-      { status: 500 }
-    );
+    const errorResponse = { 
+      success: false, 
+      error: 'Internal server error',
+      message: 'Authentication service encountered an error. Please try again.' 
+    };
+    
+    logger.apiResponse('POST', '/api/auth/verify', 500, {
+      ...errorResponse,
+      component: 'AuthVerifyAPI',
+      action: 'internalError',
+      requestId,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+    
+    return NextResponse.json(errorResponse, { status: 500 });
+   }
   }
-}
 
 /**
  * Parse SIWE message according to EIP-4361 specification

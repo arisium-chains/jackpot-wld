@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { useMiniKit } from '@/providers';
+import { logger } from '../lib/logger';
 
 // Define our own types based on expected MiniKit response structure
 interface WalletAuthSuccess {
@@ -76,23 +77,70 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [effectiveIsInWorldApp]);
 
   const connect = async () => {
+    const requestId = `wallet_connect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    logger.info('Wallet connection attempt', {
+      component: 'WalletContext',
+      action: 'connectAttempt',
+      requestId,
+      isInWorldApp,
+      effectiveIsInWorldApp,
+      isDevelopment,
+      isDevMode,
+      hasValidAppId
+    });
+    
     if (!effectiveIsInWorldApp) {
-      setError('This app must be opened in World App to connect wallet');
+      const errorMessage = 'This app must be opened in World App to connect wallet';
+      
+      logger.walletConnection('error', {
+        error: errorMessage,
+        walletType: 'world_app'
+      }, {
+        component: 'WalletContext',
+        action: 'connectionError',
+        requestId
+      });
+      
+      setError(errorMessage);
       return;
     }
     
     // In development mode, simulate the full SIWE authentication flow
     if (isDevelopment && isDevMode) {
-      console.log('Development mode: Testing full SIWE authentication flow');
+      logger.info('Development mode: Testing full SIWE authentication flow', {
+        component: 'WalletContext',
+        action: 'devModeAuth',
+        requestId
+      });
       
       try {
         // Step 1: Generate nonce from backend
+        logger.apiRequest('/api/auth/nonce', 'GET', {}, {
+          component: 'WalletContext',
+          action: 'nonceGeneration',
+          requestId
+        });
+        
         const nonceResponse = await fetch('/api/auth/nonce');
         if (!nonceResponse.ok) {
           const errorData = await nonceResponse.json();
+          
+          logger.apiResponse('/api/auth/nonce', nonceResponse.status, errorData, {
+            component: 'WalletContext',
+            action: 'nonceGenerationError',
+            requestId
+          });
+          
           throw new Error(errorData.message || 'Nonce generation failed');
         }
         const { nonce } = await nonceResponse.json();
+        
+        logger.apiResponse('/api/auth/nonce', nonceResponse.status, { nonce: nonce.slice(0, 8) + '...' }, {
+          component: 'WalletContext',
+          action: 'nonceGenerationSuccess',
+          requestId
+        });
         
         // Step 2: Create a mock SIWE message that matches EIP-4361 format
         const domain = window.location.host;
@@ -116,12 +164,38 @@ Nonce: ${nonce}
 Issued At: ${issuedAt}
 Expiration Time: ${expirationTime}`;
         
-        console.log('Mock SIWE message:', siweMessage);
+        logger.info('Mock SIWE message created', {
+          component: 'WalletContext',
+          action: 'siweMessageCreation',
+          requestId,
+          address,
+          domain,
+          chainId,
+          messageLength: siweMessage.length
+        });
         
         // Step 3: Mock signature (in real app, this comes from World App)
         const mockSignature = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234';
         
+        logger.info('Mock signature generated', {
+          component: 'WalletContext',
+          action: 'mockSignature',
+          requestId,
+          signatureLength: mockSignature.length
+        });
+        
         // Step 4: Verify with backend
+        logger.apiRequest('/api/auth/verify', 'POST', {
+          hasMessage: !!siweMessage,
+          hasSignature: !!mockSignature,
+          hasAddress: !!address,
+          hasNonce: !!nonce
+        }, {
+          component: 'WalletContext',
+          action: 'signatureVerification',
+          requestId
+        });
+        
         const verifyResponse = await fetch('/api/auth/verify', {
           method: 'POST',
           headers: {
@@ -137,24 +211,68 @@ Expiration Time: ${expirationTime}`;
         
         if (!verifyResponse.ok) {
           const errorData = await verifyResponse.json();
-          console.error('Verification failed:', errorData);
+          
+          logger.apiResponse('/api/auth/verify', verifyResponse.status, errorData, {
+            component: 'WalletContext',
+            action: 'signatureVerificationError',
+            requestId
+          });
+          
           throw new Error(errorData.message || 'Signature verification failed');
         }
         
         const verifyResult = await verifyResponse.json();
+        
+        logger.apiResponse('/api/auth/verify', verifyResponse.status, verifyResult, {
+          component: 'WalletContext',
+          action: 'signatureVerificationResponse',
+          requestId
+        });
+        
         if (verifyResult.success) {
-          console.log('✅ Mock authentication successful');
+          logger.walletConnection('connect', {
+            address: address,
+            chainId: parseInt(chainId),
+            walletType: 'world_app_mock'
+          }, {
+            component: 'WalletContext',
+            action: 'mockAuthSuccess',
+            requestId
+          });
+          
           setWalletState({
             isConnected: true,
             address: address,
             isLoading: false
           });
         } else {
-          throw new Error(verifyResult.message || 'Signature verification failed');
+          const errorMessage = verifyResult.message || 'Signature verification failed';
+          
+          logger.walletConnection('error', {
+            error: errorMessage,
+            walletType: 'world_app_mock'
+          }, {
+            component: 'WalletContext',
+            action: 'mockAuthFailed',
+            requestId
+          });
+          
+          throw new Error(errorMessage);
         }
         return;
       } catch (err) {
-        console.error('Mock authentication failed:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Mock authentication failed';
+        
+        logger.walletConnection('error', {
+          error: errorMessage,
+          walletType: 'world_app_mock'
+        }, {
+          component: 'WalletContext',
+          action: 'mockAuthError',
+          requestId,
+          errorStack: err instanceof Error ? err.stack : undefined
+        });
+        
         throw err;
       }
     }
@@ -165,23 +283,71 @@ Expiration Time: ${expirationTime}`;
     try {
       // Check if MiniKit is properly installed before attempting wallet auth
       if (!MiniKit.isInstalled()) {
-        throw new Error('MiniKit is not properly installed. Please ensure you are using the latest version of World App.');
+        const errorMessage = 'MiniKit is not properly installed. Please ensure you are using the latest version of World App.';
+        
+        logger.miniKitOperation('walletAuth', 'error', {
+          error: errorMessage,
+          isInstalled: false
+        }, {
+          component: 'WalletContext',
+          action: 'miniKitNotInstalled',
+          requestId
+        });
+        
+        throw new Error(errorMessage);
       }
 
       // Check if walletAuth command is available
       if (!MiniKit.commandsAsync?.walletAuth) {
-        throw new Error('Wallet authentication is not available. Please update your World App.');
+        const errorMessage = 'Wallet authentication is not available. Please update your World App.';
+        
+        logger.miniKitOperation('walletAuth', 'error', {
+          error: errorMessage,
+          hasWalletAuth: false
+        }, {
+          component: 'WalletContext',
+          action: 'walletAuthUnavailable',
+          requestId
+        });
+        
+        throw new Error(errorMessage);
       }
 
-      console.log('🔗 Attempting wallet connection...');
+      logger.miniKitOperation('walletAuth', 'start', {
+        isInstalled: true,
+        hasWalletAuth: true
+      }, {
+        component: 'WalletContext',
+        action: 'walletConnectionStart',
+        requestId
+      });
       
       // Step 1: Generate nonce from backend
+      logger.apiRequest('/api/auth/nonce', 'GET', {}, {
+        component: 'WalletContext',
+        action: 'realNonceGeneration',
+        requestId
+      });
+      
       const nonceResponse = await fetch('/api/auth/nonce');
       if (!nonceResponse.ok) {
         const errorData = await nonceResponse.json();
+        
+        logger.apiResponse('/api/auth/nonce', nonceResponse.status, errorData, {
+          component: 'WalletContext',
+          action: 'realNonceGenerationError',
+          requestId
+        });
+        
         throw new Error(errorData.message || 'Nonce generation failed');
       }
       const { nonce } = await nonceResponse.json();
+      
+      logger.apiResponse('/api/auth/nonce', nonceResponse.status, { nonce: nonce.slice(0, 8) + '...' }, {
+        component: 'WalletContext',
+        action: 'realNonceGenerationSuccess',
+        requestId
+      });
       
       // Step 2: Create SIWE message according to EIP-4361
       const domain = window.location.host;
@@ -190,6 +356,15 @@ Expiration Time: ${expirationTime}`;
       const version = '1';
       const chainId = '480'; // Worldchain mainnet
       const issuedAt = new Date().toISOString();
+      
+      logger.info('Calling MiniKit walletAuth', {
+        component: 'WalletContext',
+        action: 'miniKitWalletAuth',
+        requestId,
+        domain,
+        chainId,
+        hasNonce: !!nonce
+      });
       
       // Step 3: Call walletAuth with proper SIWE parameters
       const authResult = await MiniKit.commands.walletAuth({
@@ -200,30 +375,77 @@ Expiration Time: ${expirationTime}`;
         statement: 'Sign in to JackpotWLD to access your account',
       }) as AuthResult;
       
-      console.log('Wallet auth response:', authResult);
+      logger.info('MiniKit walletAuth response received', {
+        component: 'WalletContext',
+        action: 'miniKitWalletAuthResponse',
+        requestId,
+        status: authResult?.status,
+        hasAddress: !!(authResult as WalletAuthSuccess)?.address,
+        hasSignature: !!(authResult as WalletAuthSuccess)?.signature
+      });
       
       if (!authResult) {
-        throw new Error('Wallet authentication failed - no response');
+        const errorMessage = 'Wallet authentication failed - no response';
+        
+        logger.miniKitOperation('walletAuth', 'error', {
+          error: errorMessage,
+          hasResult: false
+        }, {
+          component: 'WalletContext',
+          action: 'noAuthResult',
+          requestId
+        });
+        
+        throw new Error(errorMessage);
       }
       
       if (authResult.status === 'success') {
-        console.log('✅ Wallet auth successful, verifying signature...');
-        console.log('Auth result details:', {
-          message: authResult.message,
-          siwe_message: authResult.siwe_message,
-          signature: authResult.signature,
-          address: authResult.address,
-          nonce: nonce
+        logger.miniKitOperation('walletAuth', 'success', {
+          hasMessage: !!(authResult.message || authResult.siwe_message),
+          hasSignature: !!authResult.signature,
+          hasAddress: !!authResult.address
+        }, {
+          component: 'WalletContext',
+          action: 'walletAuthSuccess',
+          requestId
         });
         
         const siweMessage = authResult.message || authResult.siwe_message;
         if (!siweMessage) {
-          throw new Error('No SIWE message received from World App');
+          const errorMessage = 'No SIWE message received from World App';
+          
+          logger.walletConnection('error', {
+            error: errorMessage,
+            walletType: 'world_app'
+          }, {
+            component: 'WalletContext',
+            action: 'noSiweMessage',
+            requestId
+          });
+          
+          throw new Error(errorMessage);
         }
         
-        console.log('SIWE message from World App:', siweMessage);
+        logger.info('SIWE message received from World App', {
+          component: 'WalletContext',
+          action: 'siweMessageReceived',
+          requestId,
+          messageLength: siweMessage.length,
+          address: authResult.address
+        });
         
         // Verify signature with backend
+        logger.apiRequest('/api/auth/verify', 'POST', {
+          hasMessage: !!siweMessage,
+          hasSignature: !!authResult.signature,
+          hasAddress: !!authResult.address,
+          hasNonce: !!nonce
+        }, {
+          component: 'WalletContext',
+          action: 'realWorldAppVerification',
+          requestId
+        });
+        
         const verifyResponse = await fetch('/api/auth/verify', {
           method: 'POST',
           headers: {
@@ -239,12 +461,34 @@ Expiration Time: ${expirationTime}`;
         
         if (!verifyResponse.ok) {
           const errorData = await verifyResponse.json();
+          
+          logger.apiResponse('/api/auth/verify', verifyResponse.status, errorData, {
+            component: 'WalletContext',
+            action: 'realWorldAppVerificationError',
+            requestId
+          });
+          
           throw new Error(errorData.message || 'Signature verification failed');
         }
         
         const verifyResult = await verifyResponse.json();
+        
+        logger.apiResponse('/api/auth/verify', verifyResponse.status, verifyResult, {
+          component: 'WalletContext',
+          action: 'realWorldAppVerificationResponse',
+          requestId
+        });
+        
         if (verifyResult.success) {
-          console.log('✅ Signature verified successfully');
+          logger.walletConnection('connect', {
+            address: authResult.address,
+            chainId: parseInt(chainId),
+            walletType: 'world_app'
+          }, {
+            component: 'WalletContext',
+            action: 'realWorldAppAuthSuccess',
+            requestId
+          });
           
           setWalletState({
             isConnected: true,
@@ -252,30 +496,62 @@ Expiration Time: ${expirationTime}`;
             isLoading: false
           });
         } else {
-          throw new Error(verifyResult.message || 'Signature verification failed');
+          const errorMessage = verifyResult.message || 'Signature verification failed';
+          
+          logger.walletConnection('error', {
+            error: errorMessage,
+            walletType: 'world_app'
+          }, {
+            component: 'WalletContext',
+            action: 'realWorldAppVerificationFailed',
+            requestId
+          });
+          
+          throw new Error(errorMessage);
         }
       } else {
         // Handle error case
         const errorMessage = authResult.details || authResult.error_message || 'Wallet authentication failed';
+        
+        logger.miniKitOperation('walletAuth', 'error', {
+          error: errorMessage,
+          details: authResult.details,
+          errorMessage: authResult.error_message
+        }, {
+          component: 'WalletContext',
+          action: 'walletAuthError',
+          requestId
+        });
+        
         throw new Error(errorMessage);
       }
     } catch (err) {
-      console.error('❌ Wallet connection failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet';
       
-      let errorMessage = 'Failed to connect wallet';
+      logger.walletConnection('error', {
+        error: errorMessage,
+        walletType: isInWorldApp ? 'world_app' : 'unknown'
+      }, {
+        component: 'WalletContext',
+        action: 'walletConnectionError',
+        requestId,
+        errorStack: err instanceof Error ? err.stack : undefined
+      });
+      
+      let userFriendlyMessage = 'Failed to connect wallet';
       
       if (err instanceof Error) {
         // Handle specific error types
         if (err.message.includes('User rejected')) {
-          errorMessage = 'Wallet connection was cancelled by user';
+          userFriendlyMessage = 'Wallet connection was cancelled by user';
         } else if (err.message.includes('Signature verification failed')) {
-          errorMessage = 'Unable to verify wallet signature. Please try again.';
+          userFriendlyMessage = 'Unable to verify wallet signature. Please try again.';
         } else if (err.message.includes('Nonce generation failed')) {
-          errorMessage = 'Authentication service temporarily unavailable. Please try again.';
+          userFriendlyMessage = 'Authentication service temporarily unavailable. Please try again.';
         } else if (err.message.includes('Network')) {
-          errorMessage = 'Network error. Please check your connection and try again.';
+          userFriendlyMessage = 'Network error. Please check your connection and try again.';
         } else {
-          errorMessage = err.message;
+          userFriendlyMessage = err.message;
         }
       }
       
@@ -284,11 +560,22 @@ Expiration Time: ${expirationTime}`;
         address: null,
         isLoading: false
       });
-      setError(errorMessage);
+      setError(userFriendlyMessage);
     }
   };
 
   const disconnect = () => {
+    const requestId = crypto.randomUUID();
+    
+    logger.walletConnection('disconnect', {
+      address: walletState.address,
+      walletType: isInWorldApp ? 'world_app' : 'unknown'
+    }, {
+      component: 'WalletContext',
+      action: 'disconnect',
+      requestId
+    });
+    
     setWalletState({
       isConnected: false,
       address: null,
