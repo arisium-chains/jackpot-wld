@@ -286,4 +286,250 @@ const ERROR_CONFIG: Record<AuthErrorType, Omit<EnhancedError, 'message' | 'detai
     retryable: true,
     recoveryAction: RecoveryAction.RETRY
   }
-};\n\n/**\n * Enhanced Error Handler Class\n */\nexport class ErrorHandler {\n  private static instance: ErrorHandler;\n  private errorHistory: EnhancedError[] = [];\n  private maxHistorySize = 50;\n\n  private constructor() {}\n\n  static getInstance(): ErrorHandler {\n    if (!ErrorHandler.instance) {\n      ErrorHandler.instance = new ErrorHandler();\n    }\n    return ErrorHandler.instance;\n  }\n\n  /**\n   * Create enhanced error from various input types\n   */\n  createError(\n    input: string | Error | AuthErrorType,\n    context?: string,\n    details?: Record<string, unknown>\n  ): EnhancedError {\n    let errorType: AuthErrorType;\n    let message: string;\n\n    // Determine error type and message\n    if (typeof input === 'string') {\n      errorType = this.classifyErrorFromString(input);\n      message = input;\n    } else if (input instanceof Error) {\n      errorType = this.classifyErrorFromError(input);\n      message = input.message;\n    } else {\n      errorType = input;\n      message = `${errorType} occurred`;\n    }\n\n    // Get error configuration\n    const config = ERROR_CONFIG[errorType] || ERROR_CONFIG[AuthErrorType.UNKNOWN_ERROR];\n\n    // Create enhanced error\n    const enhancedError: EnhancedError = {\n      ...config,\n      message,\n      details: details || {},\n      timestamp: new Date(),\n      context\n    };\n\n    // Add to history\n    this.addToHistory(enhancedError);\n\n    // Log error\n    this.logError(enhancedError);\n\n    return enhancedError;\n  }\n\n  /**\n   * Classify error from string message\n   */\n  private classifyErrorFromString(message: string): AuthErrorType {\n    const lowerMessage = message.toLowerCase();\n\n    // Network errors\n    if (lowerMessage.includes('timeout') || lowerMessage.includes('network')) {\n      return AuthErrorType.NETWORK_TIMEOUT;\n    }\n    if (lowerMessage.includes('rpc') || lowerMessage.includes('blockchain')) {\n      return AuthErrorType.RPC_ERROR;\n    }\n\n    // Environment errors\n    if (lowerMessage.includes('minikit') || lowerMessage.includes('world app')) {\n      return AuthErrorType.MINIKIT_UNAVAILABLE;\n    }\n\n    // Authentication errors\n    if (lowerMessage.includes('rejected') || lowerMessage.includes('cancelled')) {\n      return AuthErrorType.USER_REJECTED;\n    }\n    if (lowerMessage.includes('signature')) {\n      return AuthErrorType.SIGNATURE_INVALID;\n    }\n    if (lowerMessage.includes('nonce')) {\n      return AuthErrorType.NONCE_INVALID;\n    }\n\n    // Rate limiting\n    if (lowerMessage.includes('rate') || lowerMessage.includes('too many')) {\n      return AuthErrorType.RATE_LIMITED;\n    }\n\n    return AuthErrorType.UNKNOWN_ERROR;\n  }\n\n  /**\n   * Classify error from Error object\n   */\n  private classifyErrorFromError(error: Error): AuthErrorType {\n    // Check error name/constructor\n    if (error.name === 'NetworkError' || error.name === 'TimeoutError') {\n      return AuthErrorType.NETWORK_TIMEOUT;\n    }\n\n    // Check error message\n    return this.classifyErrorFromString(error.message);\n  }\n\n  /**\n   * Add error to history\n   */\n  private addToHistory(error: EnhancedError): void {\n    this.errorHistory.unshift(error);\n    if (this.errorHistory.length > this.maxHistorySize) {\n      this.errorHistory.pop();\n    }\n  }\n\n  /**\n   * Log error with appropriate level\n   */\n  private logError(error: EnhancedError): void {\n    const logData = {\n      type: error.type,\n      code: error.code,\n      message: error.message,\n      severity: error.severity,\n      retryable: error.retryable,\n      context: error.context,\n      details: error.details\n    };\n\n    switch (error.severity) {\n      case ErrorSeverity.LOW:\n        logger.info('Authentication error (low severity)', logData);\n        break;\n      case ErrorSeverity.MEDIUM:\n        logger.warn('Authentication error (medium severity)', logData);\n        break;\n      case ErrorSeverity.HIGH:\n      case ErrorSeverity.CRITICAL:\n        logger.error('Authentication error (high/critical severity)', logData);\n        break;\n    }\n  }\n\n  /**\n   * Get error history\n   */\n  getErrorHistory(): EnhancedError[] {\n    return [...this.errorHistory];\n  }\n\n  /**\n   * Get recent errors by type\n   */\n  getRecentErrorsByType(type: AuthErrorType, minutes = 5): EnhancedError[] {\n    const cutoff = new Date(Date.now() - minutes * 60 * 1000);\n    return this.errorHistory.filter(\n      error => error.type === type && error.timestamp > cutoff\n    );\n  }\n\n  /**\n   * Check if should retry based on error history\n   */\n  shouldRetry(errorType: AuthErrorType, maxRetries = 3): boolean {\n    const recentErrors = this.getRecentErrorsByType(errorType, 10);\n    return recentErrors.length < maxRetries;\n  }\n\n  /**\n   * Get recovery instructions for error\n   */\n  getRecoveryInstructions(error: EnhancedError): {\n    action: RecoveryAction;\n    message: string;\n    delay?: number;\n  } {\n    const instructions = {\n      [RecoveryAction.RETRY]: {\n        action: RecoveryAction.RETRY,\n        message: 'Click \"Try Again\" to retry the connection.'\n      },\n      [RecoveryAction.WAIT_AND_RETRY]: {\n        action: RecoveryAction.WAIT_AND_RETRY,\n        message: `Please wait ${Math.round((error.recoveryDelay || 5000) / 1000)} seconds before retrying.`,\n        delay: error.recoveryDelay\n      },\n      [RecoveryAction.REFRESH_PAGE]: {\n        action: RecoveryAction.REFRESH_PAGE,\n        message: 'Please refresh the page and try again.'\n      },\n      [RecoveryAction.OPEN_WORLD_APP]: {\n        action: RecoveryAction.OPEN_WORLD_APP,\n        message: 'Please open this app in World App to continue.'\n      },\n      [RecoveryAction.CONTACT_SUPPORT]: {\n        action: RecoveryAction.CONTACT_SUPPORT,\n        message: 'If this problem persists, please contact support.'\n      },\n      [RecoveryAction.NONE]: {\n        action: RecoveryAction.NONE,\n        message: 'No further action available.'\n      }\n    };\n\n    return instructions[error.recoveryAction] || instructions[RecoveryAction.NONE];\n  }\n\n  /**\n   * Clear error history\n   */\n  clearHistory(): void {\n    this.errorHistory = [];\n  }\n}\n\n// Export singleton instance\nexport const errorHandler = ErrorHandler.getInstance();\n\n// Utility functions for common error scenarios\nexport const AuthErrors = {\n  networkTimeout: (details?: Record<string, unknown>) =>\n    errorHandler.createError(AuthErrorType.NETWORK_TIMEOUT, 'network', details),\n\n  userRejected: (details?: Record<string, unknown>) =>\n    errorHandler.createError(AuthErrorType.USER_REJECTED, 'user_action', details),\n\n  signatureInvalid: (details?: Record<string, unknown>) =>\n    errorHandler.createError(AuthErrorType.SIGNATURE_INVALID, 'signature_verification', details),\n\n  miniKitUnavailable: (details?: Record<string, unknown>) =>\n    errorHandler.createError(AuthErrorType.MINIKIT_UNAVAILABLE, 'environment', details),\n\n  serverError: (details?: Record<string, unknown>) =>\n    errorHandler.createError(AuthErrorType.SERVER_ERROR, 'server', details),\n\n  rateLimited: (details?: Record<string, unknown>) =>\n    errorHandler.createError(AuthErrorType.RATE_LIMITED, 'rate_limit', details)\n};
+};
+
+/**
+ * Enhanced Error Handler Class
+ */
+export class ErrorHandler {
+  private static instance: ErrorHandler;
+  private errorHistory: EnhancedError[] = [];
+  private maxHistorySize = 50;
+
+  private constructor() {}
+
+  static getInstance(): ErrorHandler {
+    if (!ErrorHandler.instance) {
+      ErrorHandler.instance = new ErrorHandler();
+    }
+    return ErrorHandler.instance;
+  }
+
+  /**
+   * Create enhanced error from various input types
+   */
+  createError(
+    input: string | Error | AuthErrorType,
+    context?: string,
+    details?: Record<string, unknown>
+  ): EnhancedError {
+    let errorType: AuthErrorType;
+    let message: string;
+
+    // Determine error type and message
+    if (typeof input === 'string') {
+      errorType = this.classifyErrorFromString(input);
+      message = input;
+    } else if (input instanceof Error) {
+      errorType = this.classifyErrorFromError(input);
+      message = input.message;
+    } else {
+      errorType = input;
+      message = `${errorType} occurred`;
+    }
+
+    // Get error configuration
+    const config = ERROR_CONFIG[errorType] || ERROR_CONFIG[AuthErrorType.UNKNOWN_ERROR];
+
+    // Create enhanced error
+    const enhancedError: EnhancedError = {
+      ...config,
+      message,
+      details: details || {},
+      timestamp: new Date(),
+      context
+    };
+
+    // Add to history
+    this.addToHistory(enhancedError);
+
+    // Log error
+    this.logError(enhancedError);
+
+    return enhancedError;
+  }
+
+  /**
+   * Classify error from string message
+   */
+  private classifyErrorFromString(message: string): AuthErrorType {
+    const lowerMessage = message.toLowerCase();
+
+    // Network errors
+    if (lowerMessage.includes('timeout') || lowerMessage.includes('network')) {
+      return AuthErrorType.NETWORK_TIMEOUT;
+    }
+    if (lowerMessage.includes('rpc') || lowerMessage.includes('blockchain')) {
+      return AuthErrorType.RPC_ERROR;
+    }
+
+    // Environment errors
+    if (lowerMessage.includes('minikit') || lowerMessage.includes('world app')) {
+      return AuthErrorType.MINIKIT_UNAVAILABLE;
+    }
+
+    // Authentication errors
+    if (lowerMessage.includes('rejected') || lowerMessage.includes('cancelled')) {
+      return AuthErrorType.USER_REJECTED;
+    }
+    if (lowerMessage.includes('signature')) {
+      return AuthErrorType.SIGNATURE_INVALID;
+    }
+    if (lowerMessage.includes('nonce')) {
+      return AuthErrorType.NONCE_INVALID;
+    }
+
+    // Rate limiting
+    if (lowerMessage.includes('rate') || lowerMessage.includes('too many')) {
+      return AuthErrorType.RATE_LIMITED;
+    }
+
+    return AuthErrorType.UNKNOWN_ERROR;
+  }
+
+  /**
+   * Classify error from Error object
+   */
+  private classifyErrorFromError(error: Error): AuthErrorType {
+    // Check error name/constructor
+    if (error.name === 'NetworkError' || error.name === 'TimeoutError') {
+      return AuthErrorType.NETWORK_TIMEOUT;
+    }
+
+    // Check error message
+    return this.classifyErrorFromString(error.message);
+  }
+
+  /**
+   * Add error to history
+   */
+  private addToHistory(error: EnhancedError): void {
+    this.errorHistory.unshift(error);
+    if (this.errorHistory.length > this.maxHistorySize) {
+      this.errorHistory.pop();
+    }
+  }
+
+  /**
+   * Log error with appropriate level
+   */
+  private logError(error: EnhancedError): void {
+    const logData = {
+      type: error.type,
+      code: error.code,
+      message: error.message,
+      severity: error.severity,
+      retryable: error.retryable,
+      context: error.context,
+      details: error.details
+    };
+
+    switch (error.severity) {
+      case ErrorSeverity.LOW:
+        logger.info('Authentication error (low severity)', logData);
+        break;
+      case ErrorSeverity.MEDIUM:
+        logger.warn('Authentication error (medium severity)', logData);
+        break;
+      case ErrorSeverity.HIGH:
+      case ErrorSeverity.CRITICAL:
+        logger.error('Authentication error (high/critical severity)', logData);
+        break;
+    }
+  }
+
+  /**
+   * Get error history
+   */
+  getErrorHistory(): EnhancedError[] {
+    return [...this.errorHistory];
+  }
+
+  /**
+   * Get recent errors by type
+   */
+  getRecentErrorsByType(type: AuthErrorType, minutes = 5): EnhancedError[] {
+    const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+    return this.errorHistory.filter(
+      error => error.type === type && error.timestamp > cutoff
+    );
+  }
+
+  /**
+   * Check if should retry based on error history
+   */
+  shouldRetry(errorType: AuthErrorType, maxRetries = 3): boolean {
+    const recentErrors = this.getRecentErrorsByType(errorType, 10);
+    return recentErrors.length < maxRetries;
+  }
+
+  /**
+   * Get recovery instructions for error
+   */
+  getRecoveryInstructions(error: EnhancedError): {
+    action: RecoveryAction;
+    message: string;
+    delay?: number;
+  } {
+    const instructions = {
+      [RecoveryAction.RETRY]: {
+        action: RecoveryAction.RETRY,
+        message: 'Click "Try Again" to retry the connection.'
+      },
+      [RecoveryAction.WAIT_AND_RETRY]: {
+        action: RecoveryAction.WAIT_AND_RETRY,
+        message: `Please wait ${Math.round((error.recoveryDelay || 5000) / 1000)} seconds before retrying.`,
+        delay: error.recoveryDelay
+      },
+      [RecoveryAction.REFRESH_PAGE]: {
+        action: RecoveryAction.REFRESH_PAGE,
+        message: 'Please refresh the page and try again.'
+      },
+      [RecoveryAction.OPEN_WORLD_APP]: {
+        action: RecoveryAction.OPEN_WORLD_APP,
+        message: 'Please open this app in World App to continue.'
+      },
+      [RecoveryAction.CONTACT_SUPPORT]: {
+        action: RecoveryAction.CONTACT_SUPPORT,
+        message: 'If this problem persists, please contact support.'
+      },
+      [RecoveryAction.NONE]: {
+        action: RecoveryAction.NONE,
+        message: 'No further action available.'
+      }
+    };
+
+    return instructions[error.recoveryAction] || instructions[RecoveryAction.NONE];
+  }
+
+  /**
+   * Clear error history
+   */
+  clearHistory(): void {
+    this.errorHistory = [];
+  }
+}
+
+// Export singleton instance
+export const errorHandler = ErrorHandler.getInstance();
+
+// Utility functions for common error scenarios
+export const AuthErrors = {
+  networkTimeout: (details?: Record<string, unknown>) =>
+    errorHandler.createError(AuthErrorType.NETWORK_TIMEOUT, 'network', details),
+
+  userRejected: (details?: Record<string, unknown>) =>
+    errorHandler.createError(AuthErrorType.USER_REJECTED, 'user_action', details),
+
+  signatureInvalid: (details?: Record<string, unknown>) =>
+    errorHandler.createError(AuthErrorType.SIGNATURE_INVALID, 'signature_verification', details),
+
+  miniKitUnavailable: (details?: Record<string, unknown>) =>
+    errorHandler.createError(AuthErrorType.MINIKIT_UNAVAILABLE, 'environment', details),
+
+  serverError: (details?: Record<string, unknown>) =>
+    errorHandler.createError(AuthErrorType.SERVER_ERROR, 'server', details),
+
+  rateLimited: (details?: Record<string, unknown>) =>
+    errorHandler.createError(AuthErrorType.RATE_LIMITED, 'rate_limit', details)
+};
