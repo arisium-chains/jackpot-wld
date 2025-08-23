@@ -17,7 +17,6 @@ import { jest } from "@jest/globals";
 
 // Import components to test
 import {
-  MiniAppProvider,
   useWallet,
   useWorldID,
   usePayment,
@@ -148,7 +147,6 @@ describe("Simplified MiniApp SDK", () => {
         Promise.resolve({ nonce: "mock-nonce", ok: true, success: true }),
     });
 
-    // Set up mock implementations for the hooks
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { useWallet, useWorldID, usePayment, useLottery, useMiniApp } = jest.requireMock(
       "../providers/miniapp-provider"
@@ -404,7 +402,7 @@ describe("Simplified MiniApp SDK", () => {
 
         React.useEffect(() => {
           wallet.connect();
-        }, []);
+        }, [wallet]);
 
         return <WalletManager />;
       };
@@ -507,7 +505,6 @@ describe("Simplified MiniApp SDK", () => {
       await user.click(sendTab);
 
       const amountInput = screen.getByLabelText(/amount/i);
-      const sendButton = screen.getByText("Send WLD");
 
       // Try to send with invalid amount
       await user.type(amountInput, "invalid");

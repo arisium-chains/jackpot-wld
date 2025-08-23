@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -27,7 +27,6 @@ import {
   Zap,
   CheckCircle,
   AlertTriangle,
-  Smartphone,
   Globe,
   Users,
   Coins,
@@ -45,22 +44,9 @@ import {
   useWallet,
   useWorldID,
   usePayment,
-  useLottery,
 } from "../../providers/miniapp-provider";
 import { logger } from "../../lib/logger";
 import { toast } from "sonner";
-
-/**
- * Demo Section Configuration
- */
-interface DemoSection {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  status: "available" | "demo" | "coming-soon";
-  component?: React.ComponentType;
-}
 
 /**
  * Feature Showcase Card
@@ -123,7 +109,6 @@ function SDKStatusDisplay() {
   const { state, isReady } = useMiniApp();
   const wallet = useWallet();
   const worldId = useWorldID();
-  const payment = usePayment();
 
   const statusItems = [
     {
@@ -268,7 +253,6 @@ function InteractiveDemoFlow() {
 
   const wallet = useWallet();
   const worldId = useWorldID();
-  const payment = usePayment();
 
   const demoSteps = [
     {

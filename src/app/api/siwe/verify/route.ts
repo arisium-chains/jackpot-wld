@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { verifyMessage } from 'viem'
-import { createPublicClient, http } from 'viem'
 import { defineChain } from 'viem/utils'
 import { logger } from '../../../../lib/logger'
 
@@ -25,7 +24,6 @@ export async function POST(req: Request) {
       logger.apiResponse('POST', '/api/siwe/verify', 400, { error: 'BadRequest' })
       return NextResponse.json({ ok: false, error: 'BadRequest' }, { status: 400 })
     }
-    const client = createPublicClient({ chain: worldSepolia, transport: http() })
     const verified = await verifyMessage({ address, message, signature })
     if (!verified) {
       logger.apiResponse('POST', '/api/siwe/verify', 401, { error: 'SignatureInvalid', address })

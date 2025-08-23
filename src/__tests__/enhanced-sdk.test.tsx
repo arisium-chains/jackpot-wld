@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 import { jest } from '@jest/globals';
@@ -20,7 +20,7 @@ import EnhancedPushNotifications from '../components/enhanced-push-notifications
 import EnhancedAnalytics from '../components/enhanced-analytics';
 import EnhancedOfflineSupport from '../components/enhanced-offline-support';
 import EnhancedUIOptimizations from '../components/enhanced-ui-optimizations';
-import { miniAppSDK, EnhancedMiniAppSDK } from '../lib/miniapp-sdk';
+import { EnhancedMiniAppSDK } from '../lib/miniapp-sdk';
 
 // Mock external dependencies
 jest.mock('../lib/logger', () => ({
@@ -574,7 +574,7 @@ describe('Enhanced MiniApp SDK', () => {
       const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         try {
           return <>{children}</>;
-        } catch (error) {
+        } catch {
           return <div>Error occurred</div>;
         }
       };

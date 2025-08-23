@@ -6,7 +6,7 @@ export const runtime = 'edge';
  * Generate a cryptographically secure nonce for SIWE authentication
  * Following EIP-4361 Sign-In with Ethereum specification
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Generate a cryptographically secure random nonce using Web Crypto API
     // Using 32 bytes (256 bits) for high entropy

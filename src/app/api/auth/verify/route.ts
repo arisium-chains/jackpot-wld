@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { v4 as uuidv4 } from 'uuid';
 
 export const runtime = 'edge';
 
@@ -17,7 +16,7 @@ function mockVerifySignature(message: string, signature: string, address: string
  * As specified in World App wallet-auth documentation
  */
 export async function POST(request: NextRequest) {
-  const requestId = uuidv4();
+  const requestId = crypto.randomUUID();
   
   try {
     const { message, signature, address, nonce } = await request.json();
