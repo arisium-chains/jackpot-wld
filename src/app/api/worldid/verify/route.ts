@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       component: 'WorldIDVerifyAPI',
       action: 'worldcoinAPIResponse',
       requestId,
-      status: verifyRes.status,
+      status: verifyRes.status.toString(),
       success: verifyData.success
     });
 

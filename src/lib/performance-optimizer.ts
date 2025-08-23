@@ -455,7 +455,7 @@ export class PerformanceOptimizer {
     if (typeof window !== 'undefined' && 'gc' in window) {
       try {
         (window as unknown as { gc: () => void }).gc();
-      } catch (error) {
+      } catch {
         logger.debug('Manual GC not available');
       }
     }

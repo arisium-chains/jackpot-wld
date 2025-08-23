@@ -380,7 +380,7 @@ export function EnhancedOfflineSupport({
       setLastSyncError(errorMessage);
       
       onError?.({
-        code: 'SDK_ERROR' as any, // SYNC_FAILED not available in SDKErrorCode
+        code: 'OFFLINE_ERROR', // Using available SDKErrorCode for sync errors
         message: errorMessage,
         timestamp: new Date()
       });
@@ -748,7 +748,7 @@ export function EnhancedOfflineSupport({
                 <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-3 h-3 rounded-full ${
-                      (item as any).synced // synced property not in OfflineQueueItem type 
+                      item.retryCount === 0
                         ? 'bg-green-500'
                         : item.retryCount >= maxRetries
                         ? 'bg-red-500'

@@ -183,18 +183,6 @@ export function WorldIDManager({
     [showHistory, verificationHistory]
   );
 
-  // Auto-verify if wallet is connected and verification is not done
-  useEffect(() => {
-    if (
-      autoVerify &&
-      wallet.isConnected &&
-      !worldId.isVerified &&
-      !worldId.isVerifying
-    ) {
-      handleVerify();
-    }
-  }, [autoVerify, wallet.isConnected, worldId.isVerified, worldId.isVerifying]);
-
   // Handle verification success
   const handleVerificationSuccess = useCallback(
     async (proof: ISuccessResult) => {
@@ -262,7 +250,7 @@ export function WorldIDManager({
         setIsWidgetOpen(false);
       }
     },
-    [action, signal, worldId.verify, onVerified, onError, saveToHistory]
+    [action, signal, worldId, onVerified, onError, saveToHistory]
   );
 
   // Handle verification error
@@ -306,13 +294,25 @@ export function WorldIDManager({
     logger.info("World ID verification initiated", { action });
   }, [wallet.isConnected, worldId.isVerified, action]);
 
+  // Auto-verify if wallet is connected and verification is not done
+  useEffect(() => {
+    if (
+      autoVerify &&
+      wallet.isConnected &&
+      !worldId.isVerified &&
+      !worldId.isVerifying
+    ) {
+      handleVerify();
+    }
+  }, [autoVerify, wallet.isConnected, worldId.isVerified, worldId.isVerifying, handleVerify]);
+
   // Handle reset verification
   const handleReset = useCallback(() => {
     worldId.reset();
     onReset?.();
     toast.success("Verification reset");
     logger.info("World ID verification reset");
-  }, [worldId.reset, onReset]);
+  }, [worldId, onReset]);
 
   // Get verification requirements text
   const getRequirementText = () => {
@@ -377,7 +377,7 @@ export function WorldIDManager({
                       Human Verification Required
                     </h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Verify you're a real person to ensure fair lottery
+                      Verify you&apos;re a real person to ensure fair lottery
                       participation
                     </p>
                     <p className="text-xs text-blue-600 mt-2">
@@ -424,7 +424,7 @@ export function WorldIDManager({
                         Verification Complete
                       </h4>
                       <p className="text-sm text-green-700">
-                        You're verified and eligible for lottery participation
+                        You&apos;re verified and eligible for lottery participation
                       </p>
                     </div>
                   </div>

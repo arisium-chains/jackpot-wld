@@ -63,13 +63,11 @@ interface SDKIntegrationProps {
 const SDKIntegration: React.FC<SDKIntegrationProps> = ({
   showAdvanced = false,
   enablePerformanceMonitoring = true,
-  autoOptimize = true,
-  onError
+  autoOptimize = true
 }) => {
   const { isReady, error: sdkError } = useEnhancedMiniKit();
   const [activeFeature, setActiveFeature] = useState<string>('overview');
   const [featureStatuses, setFeatureStatuses] = useState<Record<string, 'available' | 'unavailable' | 'error'>>({});
-  const [performanceOptimizer, setPerformanceOptimizer] = useState<PerformanceOptimizer | null>(null);
   const [isOptimized, setIsOptimized] = useState(false);
 
   // Define SDK features
@@ -162,7 +160,6 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
     if (enablePerformanceMonitoring) {
       const config = getOptimizationConfig();
       const optimizer = new PerformanceOptimizer(config.performance);
-      setPerformanceOptimizer(optimizer);
 
       // Auto-optimize if enabled
       if (autoOptimize) {
@@ -212,7 +209,7 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
             default:
               statuses[feature.id] = 'available';
           }
-        } catch (error) {
+        } catch {
           statuses[feature.id] = 'error';
         }
       }
@@ -221,7 +218,7 @@ const SDKIntegration: React.FC<SDKIntegrationProps> = ({
     };
 
     checkFeatureAvailability();
-  }, [isReady]);
+  }, [isReady, features]);
 
   const getStatusBadge = (status: 'available' | 'unavailable' | 'error') => {
     switch (status) {

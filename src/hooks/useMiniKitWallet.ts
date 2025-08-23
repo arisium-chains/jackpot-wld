@@ -15,21 +15,9 @@ declare global {
   }
 }
 
-// MiniKit types based on official documentation
-interface MiniKitWalletAuthPayload {
-  status: 'success' | 'error';
-  error?: string;
-  message?: string;
-  signature?: string;
-}
 
-interface MiniKitInstance {
-  walletAddress?: string;
-  isInstalled: () => boolean;
-  commandsAsync?: {
-    walletAuth: (params: { nonce: string }) => Promise<{ finalPayload: MiniKitWalletAuthPayload }>;
-  };
-}
+
+
 
 // Status type as specified in requirements
 type Status = 'idle' | 'authing' | 'ready' | 'error';
@@ -52,12 +40,7 @@ interface UseMiniKitWalletReturn {
   reset(): void;
 }
 
-// Error types for better error handling
-type MiniKitError = 
-  | 'MiniKitUnavailable'
-  | 'WalletAuthDeclined' 
-  | 'NetworkError'
-  | 'Unexpected';
+
 
 /**
  * Custom hook for handling MiniKit wallet authentication
@@ -91,37 +74,7 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
     checkEnvironment();
   }, [checkEnvironment]);
 
-  // Helper function to get error type from error message
-  const getErrorType = (error: unknown): MiniKitError => {
-    if (error instanceof Error) {
-      const message = error.message.toLowerCase();
-      if (message.includes('cancelled') || message.includes('declined') || message.includes('rejected')) {
-        return 'WalletAuthDeclined';
-      }
-      if (message.includes('network') || message.includes('fetch')) {
-        return 'NetworkError';
-      }
-      if (message.includes('minikit') || message.includes('not available') || message.includes('not installed')) {
-        return 'MiniKitUnavailable';
-      }
-    }
-    return 'Unexpected';
-  };
 
-  // Helper function to get user-friendly error message
-  const getErrorMessage = (errorType: MiniKitError, originalError?: unknown): string => {
-    switch (errorType) {
-      case 'MiniKitUnavailable':
-        return 'MiniKit is not available. Please ensure you are using the latest version of World App.';
-      case 'WalletAuthDeclined':
-        return 'Wallet connection was cancelled. Please try again.';
-      case 'NetworkError':
-        return 'Network error occurred. Please check your connection and try again.';
-      case 'Unexpected':
-      default:
-        return originalError instanceof Error ? originalError.message : 'An unexpected error occurred. Please try again.';
-    }
-  };
 
   // Main authentication function
   const beginAuth = useCallback(async (): Promise<void> => {
@@ -178,7 +131,7 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
       logger.walletAuth('auth_error', { error: errorMessage, originalError: err });
       setState(prev => ({ ...prev, error: errorMessage, status: 'error' }))
     }
-  }, [checkEnvironment]);
+  }, []);
 
   // Reset function to clear state
   const reset = useCallback(() => {

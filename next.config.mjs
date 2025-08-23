@@ -1,4 +1,5 @@
-import { withSentryConfig } from '@sentry/nextjs';
+// Temporarily disabled Sentry to fix build issues
+// import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -17,6 +18,12 @@ const nextConfig = {
   
   // Webpack configuration
   webpack: (config, { isServer }) => {
+    // Ignore pino-pretty module to prevent build warnings
+    config.externals = config.externals || [];
+    if (!isServer) {
+      config.externals.push('pino-pretty');
+    }
+    
     // Add any custom webpack configurations here
     return config;
   },
@@ -90,6 +97,9 @@ const sentryWebpackPluginOptions = {
 };
 
 // Export the configuration with Sentry
-export default process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
-  : nextConfig;
+// Temporarily disabled Sentry configuration
+// export default process.env.NEXT_PUBLIC_SENTRY_DSN
+//   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+//   : nextConfig;
+
+export default nextConfig;

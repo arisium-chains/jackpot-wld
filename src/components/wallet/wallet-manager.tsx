@@ -101,13 +101,6 @@ export function WalletManager({
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [lastBalanceUpdate, setLastBalanceUpdate] = useState<Date | null>(null);
 
-  // Auto-connect on mount if enabled
-  useEffect(() => {
-    if (autoConnect && !wallet.isConnected && !wallet.isConnecting) {
-      handleConnect();
-    }
-  }, [autoConnect]);
-
   // Handle wallet connection
   const handleConnect = useCallback(async () => {
     try {
@@ -128,7 +121,14 @@ export function WalletManager({
       toast.error(`Connection failed: ${errorMessage}`);
       logger.error("WalletManager: Connection failed", { error: errorMessage });
     }
-  }, [wallet.connect, wallet.address, onConnect, onError]);
+  }, [wallet, onConnect, onError]);
+
+  // Auto-connect on mount if enabled
+  useEffect(() => {
+    if (autoConnect && !wallet.isConnected && !wallet.isConnecting) {
+      handleConnect();
+    }
+  }, [autoConnect, handleConnect, wallet.isConnected, wallet.isConnecting]);
 
   // Handle wallet disconnection
   const handleDisconnect = useCallback(async () => {
@@ -147,7 +147,7 @@ export function WalletManager({
         error: errorMessage,
       });
     }
-  }, [wallet.disconnect, onDisconnect, onError]);
+  }, [wallet, onDisconnect, onError]);
 
   // Handle balance refresh
   const handleRefreshBalance = useCallback(async () => {
@@ -169,7 +169,7 @@ export function WalletManager({
     } finally {
       setIsRefreshingBalance(false);
     }
-  }, [wallet.isConnected, wallet.getBalance]);
+  }, [wallet]);
 
   // Handle chain switching
   const handleSwitchChain = useCallback(
@@ -190,7 +190,7 @@ export function WalletManager({
         });
       }
     },
-    [wallet.switchChain]
+    [wallet]
   );
 
   // Copy address to clipboard
@@ -200,10 +200,10 @@ export function WalletManager({
     try {
       await navigator.clipboard.writeText(wallet.address);
       toast.success("Address copied to clipboard");
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy address");
     }
-  }, [wallet.address]);
+  }, [wallet]);
 
   // Format address for display
   const formatAddress = (address: string) => {

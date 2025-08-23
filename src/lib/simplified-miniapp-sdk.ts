@@ -9,16 +9,11 @@ import {
   SDKStatus,
   EnvironmentInfo,
   MiniAppState,
-  MiniAppError,
   MiniAppEvent,
   EventListener,
   PaymentTransaction,
   PoolStats,
-  UserStats,
-  WalletState,
-  WorldIDState,
-  PaymentState,
-  LotteryState
+  UserStats
 } from '../types/miniapp';
 import { logger } from './logger';
 import { isWorldApp } from './utils';
@@ -248,7 +243,7 @@ export class SimplifiedMiniAppSDK {
   }
 
   // World ID Implementation
-  async verifyWorldID(action: string, signal?: string): Promise<ISuccessResult> {
+  async verifyWorldID(action: string): Promise<ISuccessResult> {
     try {
       this._state.worldId.isVerifying = true;
 
@@ -417,7 +412,7 @@ export class SimplifiedMiniAppSDK {
       this._state.lottery.nextDraw = stats.nextDrawTime;
 
       return stats;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch pool stats');
     }
   }
@@ -439,7 +434,7 @@ export class SimplifiedMiniAppSDK {
       };
 
       return stats;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch user stats');
     }
   }
@@ -452,7 +447,7 @@ export class SimplifiedMiniAppSDK {
       
       this._state.lottery.isEligible = isEligible;
       return isEligible;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

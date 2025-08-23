@@ -81,10 +81,14 @@ class Logger {
       // Capture unhandled errors
       window.addEventListener('error', (event) => {
         this.worldAppError('UNHANDLED_ERROR', {
+          code: 'UNHANDLED_ERROR',
           message: event.message,
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
+          details: {
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno
+          },
+          timestamp: new Date(),
           stack: event.error?.stack
         })
       })
@@ -92,8 +96,12 @@ class Logger {
       // Capture unhandled promise rejections
       window.addEventListener('unhandledrejection', (event) => {
         this.worldAppError('UNHANDLED_REJECTION', {
+          code: 'UNHANDLED_REJECTION',
           message: event.reason?.message || 'Unhandled promise rejection',
-          reason: event.reason,
+          details: {
+            reason: event.reason
+          },
+          timestamp: new Date(),
           stack: event.reason?.stack
         })
       })
@@ -521,7 +529,7 @@ class Logger {
         component: 'Logger',
         action: 'RemoteLogging',
         endpoint,
-        status: response.status
+        status: response.status.toString()
       })
     } catch (error) {
       this.error('Failed to send logs to remote endpoint', {

@@ -75,7 +75,8 @@ export function WorldAppErrorHandler({
       logger.worldAppError('USER_FACING_ERROR', {
         code: error.code || 'UNKNOWN',
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        timestamp: error.timestamp ? new Date(error.timestamp) : new Date()
       }, {
         component: 'WorldAppErrorHandler',
         action: 'DisplayError',

@@ -6,7 +6,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { miniAppSDK, EnhancedMiniAppSDK } from '../lib/miniapp-sdk';
+import { miniAppSDK } from '../lib/miniapp-sdk';
 import {
   MiniAppSDK,
   SDKStatus,
@@ -168,11 +168,11 @@ export function EnhancedMiniKitProvider({
   const [walletState, setWalletState] = useState<WalletState>(miniAppSDK.wallet.state);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(miniAppSDK.payment.status);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(miniAppSDK.worldId.status);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(miniAppSDK.notifications.permission);
+  const [notificationPermission] = useState<NotificationPermission>(miniAppSDK.notifications.permission);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(miniAppSDK.offline.status);
 
   // Event handlers
-  const handleSDKReady = useCallback((data: unknown) => {
+  const handleSDKReady = useCallback(() => {
     setStatus(miniAppSDK.status);
     setIsReady(true);
     logger.info('Enhanced MiniKit Provider: SDK ready');
@@ -190,7 +190,7 @@ export function EnhancedMiniKitProvider({
     logger.info('Enhanced MiniKit Provider: Wallet connected', walletData);
   }, []);
 
-  const handleWalletDisconnected = useCallback((data: unknown) => {
+  const handleWalletDisconnected = useCallback(() => {
     setWalletState(miniAppSDK.wallet.state);
     logger.info('Enhanced MiniKit Provider: Wallet disconnected');
   }, []);

@@ -25,8 +25,6 @@ import {
   WorldIDActions,
   PaymentActions,
   LotteryActions,
-  PoolStats,
-  UserStats,
   PaymentTransaction,
 } from "../types/miniapp";
 import { logger } from "../lib/logger";
@@ -242,7 +240,7 @@ export function MiniAppProvider({
   // World ID Actions
   const worldIdActions: WorldIDActions = {
     verify: async (action: string, signal?: string) => {
-      const proof = await miniAppSDK.verifyWorldID(action, signal);
+      const proof = await miniAppSDK.verifyWorldID(action);
       syncState();
       return proof;
     },

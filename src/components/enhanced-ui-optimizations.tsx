@@ -239,7 +239,7 @@ export function EnhancedUIOptimizations({
       const errorMessage = error instanceof Error ? error.message : 'Failed to initialize optimizations';
       
       onError?.({
-        code: 'SDK_ERROR' as any, // OPTIMIZATION_INIT_FAILED not available in SDKErrorCode
+        code: 'UNKNOWN_ERROR', // Using available SDKErrorCode for optimization errors
         message: errorMessage,
         timestamp: new Date()
       });

@@ -112,7 +112,7 @@ export function WorldAppDebugPanel({
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'error': return 'destructive'
-      case 'warn': return 'warning'
+      case 'warn': return 'outline'
       case 'info': return 'default'
       case 'debug': return 'secondary'
       default: return 'default'
@@ -313,11 +313,11 @@ export function WorldAppDebugPanel({
                             {log.timestamp.toLocaleTimeString()}
                           </span>
                           
-                          {log.context?.component && (
+                          {log.context?.component && typeof log.context.component === 'string' ? (
                             <Badge variant="outline" className="text-xs px-1 py-0">
                               {log.context.component}
                             </Badge>
-                          )}
+                          ) : null}
                         </div>
                         
                         <div className="font-mono">{log.message}</div>

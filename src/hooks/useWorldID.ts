@@ -242,13 +242,13 @@ export function useWorldID(): UseWorldIDReturn {
     
     logger.worldIdVerification('error', {
       requestId,
-      error: error.message || 'IDKit verification failed',
-      errorCode: error.code,
-      errorType: 'idkit_error'
+      error: error.message || 'IDKit verification failed'
     }, {
       component: 'useWorldID',
       action: 'idkitError',
-      errorDetails: error
+      errorDetails: error,
+      errorCode: error.code,
+      errorType: 'idkit_error'
     });
     
     setShowIDKit(false);

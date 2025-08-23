@@ -29,7 +29,6 @@ import {
   WorldIDProof,
   ShareOptions,
   ShareResponse,
-  BiometricAuthOptions,
   BiometricAuthResponse,
   NotificationPermission,
   PushNotificationOptions,
@@ -41,8 +40,7 @@ import {
   SDKErrorCode,
   DeviceInfo,
   PaymentStatus,
-  VerificationStatus,
-  SDKEventMap
+  VerificationStatus
 } from '../types/miniapp-sdk';
 import { logger } from './logger';
 
@@ -275,7 +273,7 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
         }
 
         // Use MiniKit payment functionality
-        const paymentResult = await MiniKit.commandsAsync.pay({
+        await MiniKit.commandsAsync.pay({
           reference: this.generateTransactionId(),
           to: options.recipient,
           tokens: [{
@@ -318,7 +316,7 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
       }
     },
 
-    request: async (request: unknown): Promise<PaymentResponse> => {
+    request: async (): Promise<PaymentResponse> => {
       // Implementation for payment requests
       throw this.createError('SDK_NOT_AVAILABLE', 'Payment requests not yet implemented');
     },
@@ -401,7 +399,7 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
         }
 
         // Use MiniKit sharing
-        const shareResult = await MiniKit.commandsAsync.share(options.content);
+        await MiniKit.commandsAsync.share(options.content);
         
         this.emit('share:completed', { platform: 'unknown' }); // shareResult.platform not available
         
@@ -439,7 +437,7 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
       return true; // Placeholder
     },
 
-    authenticate: async (options?: BiometricAuthOptions): Promise<BiometricAuthResponse> => {
+    authenticate: async (): Promise<BiometricAuthResponse> => {
       try {
         if (!this.isInstalled) {
           throw this.createError('BIOMETRIC_NOT_AVAILABLE', 'Biometric authentication not available');
@@ -447,7 +445,7 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
 
         // Use MiniKit biometric authentication
         // Note: biometricAuth might not be available in current MiniKit version
-        // const authResult = await MiniKit.commandsAsync.biometricAuth(options || {});
+        // const authResult = await MiniKit.commandsAsync.biometricAuth({});
         throw new Error('Biometric authentication not available in current MiniKit version');
       } catch (error) {
         const sdkError = error instanceof Error ?
@@ -467,8 +465,6 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
   // Notifications Implementation
   public notifications = {
     get permission(): NotificationPermission {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
-      const self = this;
       return { status: 'default', canRequest: true }; // _notificationPermission not available on notifications object
     },
 
@@ -636,10 +632,10 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
       }
     },
 
-    hapticFeedback: async (type: 'light' | 'medium' | 'heavy' = 'medium'): Promise<void> => {
+    hapticFeedback: async (): Promise<void> => {
       if (this.isInstalled) {
         // Haptic feedback functionality may not be available in current MiniKit version
-        // await MiniKit.commandsAsync.sendHapticFeedback({ type });
+        // await MiniKit.commandsAsync.sendHapticFeedback({ type: 'medium' });
       }
     },
 

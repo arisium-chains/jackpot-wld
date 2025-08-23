@@ -116,7 +116,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       try {
         // Step 1: Generate nonce from backend
-        logger.apiRequest('/api/auth/nonce', 'GET', {}, {
+        logger.apiRequest('GET', '/api/auth/nonce', {
           component: 'WalletContext',
           action: 'nonceGeneration',
           requestId
@@ -126,7 +126,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (!nonceResponse.ok) {
           const errorData = await nonceResponse.json();
           
-          logger.apiResponse('/api/auth/nonce', nonceResponse.status, errorData, {
+          logger.apiResponse('GET', '/api/auth/nonce', nonceResponse.status, {
+            ...errorData,
             component: 'WalletContext',
             action: 'nonceGenerationError',
             requestId
@@ -136,7 +137,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
         const { nonce } = await nonceResponse.json();
         
-        logger.apiResponse('/api/auth/nonce', nonceResponse.status, { nonce: nonce.slice(0, 8) + '...' }, {
+        logger.apiResponse('GET', '/api/auth/nonce', nonceResponse.status, {
+          nonce: nonce.slice(0, 8) + '...',
           component: 'WalletContext',
           action: 'nonceGenerationSuccess',
           requestId
@@ -185,12 +187,11 @@ Expiration Time: ${expirationTime}`;
         });
         
         // Step 4: Verify with backend
-        logger.apiRequest('/api/auth/verify', 'POST', {
+        logger.apiRequest('POST', '/api/auth/verify', {
           hasMessage: !!siweMessage,
           hasSignature: !!mockSignature,
           hasAddress: !!address,
-          hasNonce: !!nonce
-        }, {
+          hasNonce: !!nonce,
           component: 'WalletContext',
           action: 'signatureVerification',
           requestId
@@ -212,7 +213,8 @@ Expiration Time: ${expirationTime}`;
         if (!verifyResponse.ok) {
           const errorData = await verifyResponse.json();
           
-          logger.apiResponse('/api/auth/verify', verifyResponse.status, errorData, {
+          logger.apiResponse('POST', '/api/auth/verify', verifyResponse.status, {
+            ...errorData,
             component: 'WalletContext',
             action: 'signatureVerificationError',
             requestId
@@ -223,7 +225,8 @@ Expiration Time: ${expirationTime}`;
         
         const verifyResult = await verifyResponse.json();
         
-        logger.apiResponse('/api/auth/verify', verifyResponse.status, verifyResult, {
+        logger.apiResponse('POST', '/api/auth/verify', verifyResponse.status, {
+          ...verifyResult,
           component: 'WalletContext',
           action: 'signatureVerificationResponse',
           requestId
@@ -323,7 +326,7 @@ Expiration Time: ${expirationTime}`;
       });
       
       // Step 1: Generate nonce from backend
-      logger.apiRequest('/api/auth/nonce', 'GET', {}, {
+      logger.apiRequest('GET', '/api/auth/nonce', {
         component: 'WalletContext',
         action: 'realNonceGeneration',
         requestId
@@ -333,7 +336,8 @@ Expiration Time: ${expirationTime}`;
       if (!nonceResponse.ok) {
         const errorData = await nonceResponse.json();
         
-        logger.apiResponse('/api/auth/nonce', nonceResponse.status, errorData, {
+        logger.apiResponse('GET', '/api/auth/nonce', nonceResponse.status, {
+          ...errorData,
           component: 'WalletContext',
           action: 'realNonceGenerationError',
           requestId
@@ -343,7 +347,8 @@ Expiration Time: ${expirationTime}`;
       }
       const { nonce } = await nonceResponse.json();
       
-      logger.apiResponse('/api/auth/nonce', nonceResponse.status, { nonce: nonce.slice(0, 8) + '...' }, {
+      logger.apiResponse('GET', '/api/auth/nonce', nonceResponse.status, {
+        nonce: nonce.slice(0, 8) + '...',
         component: 'WalletContext',
         action: 'realNonceGenerationSuccess',
         requestId
@@ -351,11 +356,7 @@ Expiration Time: ${expirationTime}`;
       
       // Step 2: Create SIWE message according to EIP-4361
       const domain = window.location.host;
-      const uri = window.location.origin;
-      const statement = 'Sign in to JackpotWLD with your Ethereum account';
-      const version = '1';
       const chainId = '480'; // Worldchain mainnet
-      const issuedAt = new Date().toISOString();
       
       logger.info('Calling MiniKit walletAuth', {
         component: 'WalletContext',
@@ -435,12 +436,11 @@ Expiration Time: ${expirationTime}`;
         });
         
         // Verify signature with backend
-        logger.apiRequest('/api/auth/verify', 'POST', {
+        logger.apiRequest('POST', '/api/auth/verify', {
           hasMessage: !!siweMessage,
           hasSignature: !!authResult.signature,
           hasAddress: !!authResult.address,
-          hasNonce: !!nonce
-        }, {
+          hasNonce: !!nonce,
           component: 'WalletContext',
           action: 'realWorldAppVerification',
           requestId
@@ -462,7 +462,8 @@ Expiration Time: ${expirationTime}`;
         if (!verifyResponse.ok) {
           const errorData = await verifyResponse.json();
           
-          logger.apiResponse('/api/auth/verify', verifyResponse.status, errorData, {
+          logger.apiResponse('POST', '/api/auth/verify', verifyResponse.status, {
+            ...errorData,
             component: 'WalletContext',
             action: 'realWorldAppVerificationError',
             requestId
@@ -473,7 +474,8 @@ Expiration Time: ${expirationTime}`;
         
         const verifyResult = await verifyResponse.json();
         
-        logger.apiResponse('/api/auth/verify', verifyResponse.status, verifyResult, {
+        logger.apiResponse('POST', '/api/auth/verify', verifyResponse.status, {
+          ...verifyResult,
           component: 'WalletContext',
           action: 'realWorldAppVerificationResponse',
           requestId
@@ -568,7 +570,7 @@ Expiration Time: ${expirationTime}`;
     const requestId = crypto.randomUUID();
     
     logger.walletConnection('disconnect', {
-      address: walletState.address,
+      address: walletState.address || undefined,
       walletType: isInWorldApp ? 'world_app' : 'unknown'
     }, {
       component: 'WalletContext',

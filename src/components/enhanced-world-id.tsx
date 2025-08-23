@@ -223,7 +223,7 @@ export function EnhancedWorldID({
       // Call error callback
       if (error instanceof Error) {
         onError?.({
-          code: 'VERIFICATION_FAILED' as any,
+          code: 'VERIFICATION_FAILED',
           message: errorMessage,
           timestamp: new Date()
         });

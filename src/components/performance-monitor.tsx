@@ -12,15 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Activity, 
-  Cpu, 
   HardDrive, 
   Wifi, 
   Zap, 
   AlertTriangle, 
   CheckCircle, 
-  Settings,
-  TrendingUp,
-  TrendingDown,
   Monitor,
   Smartphone
 } from 'lucide-react';
@@ -63,23 +59,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     };
   }, [config.performance]);
 
-  // Monitor performance metrics
-  useEffect(() => {
-    if (!optimizer || !isMonitoring) return;
 
-    const interval = setInterval(() => {
-      const currentMetrics = optimizer.getMetrics();
-      setMetrics(currentMetrics);
-      checkPerformanceAlerts(currentMetrics);
-
-      // Auto-optimize if enabled and performance is poor
-      if (autoOptimize && shouldAutoOptimize(currentMetrics)) {
-        handleOptimize();
-      }
-    }, 2000); // Update every 2 seconds
-
-    return () => clearInterval(interval);
-  }, [optimizer, isMonitoring, autoOptimize]);
 
   const checkPerformanceAlerts = useCallback((currentMetrics: Partial<PerformanceMetrics>) => {
     const newAlerts: Array<{ type: 'warning' | 'critical'; message: string }> = [];
@@ -138,11 +118,23 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     }
   };
 
-  const getPerformanceStatus = (value: number, thresholds: { critical: number; warning: number; good: number }) => {
-    if (value <= thresholds.critical) return { status: 'critical', color: 'destructive' };
-    if (value <= thresholds.warning) return { status: 'warning', color: 'warning' };
-    return { status: 'good', color: 'success' };
-  };
+  // Monitor performance metrics
+  useEffect(() => {
+    if (!optimizer || !isMonitoring) return;
+
+    const interval = setInterval(() => {
+      const currentMetrics = optimizer.getMetrics();
+      setMetrics(currentMetrics);
+      checkPerformanceAlerts(currentMetrics);
+
+      // Auto-optimize if enabled and performance is poor
+      if (autoOptimize && shouldAutoOptimize(currentMetrics)) {
+        handleOptimize();
+      }
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [optimizer, isMonitoring, autoOptimize, checkPerformanceAlerts, handleOptimize, shouldAutoOptimize]);
 
   const getMemoryPercentage = () => {
     if (!metrics.memoryUsage) return 0;

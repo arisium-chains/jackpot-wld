@@ -276,7 +276,7 @@ export function EnhancedBiometricAuth({
       // Call error callback
       if (error instanceof Error) {
         onError?.({
-          code: 'AUTHENTICATION_FAILED' as any,
+          code: 'VERIFICATION_FAILED',
           message: errorMessage,
           timestamp: new Date()
         });
