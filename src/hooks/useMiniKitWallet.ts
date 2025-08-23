@@ -1,23 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { MiniKit } from '@worldcoin/minikit-js';
+import { AuthenticationManager, AuthState, AuthError } from '../lib/auth-manager';
+import { errorHandler, AuthErrorType, EnhancedError } from '../lib/error-handler';
 import { isWorldApp } from '../lib/utils';
 import { logger } from '../lib/logger';
 
-// Global type declaration for MiniKit
-declare global {
-  interface Window {
-    MiniKit?: {
-      walletAddress?: string;
-      [key: string]: unknown;
-    };
-  }
-}
-
-
-
-
+// Create singleton authentication manager instance
+const authManager = new AuthenticationManager();
 
 // Status type as specified in requirements
 type Status = 'idle' | 'authing' | 'ready' | 'error';
@@ -28,6 +18,10 @@ interface MiniKitWalletState {
   status: Status;
   address?: `0x${string}`;
   error?: string;
+  sessionId?: string;
+  enhancedError?: EnhancedError;
+  canRetry: boolean;
+  retryCount: number;
 }
 
 // Hook return interface - matches exact requirements
@@ -36,20 +30,26 @@ interface UseMiniKitWalletReturn {
   status: Status;
   address?: `0x${string}`;
   error?: string;
+  sessionId?: string;
+  enhancedError?: EnhancedError;
+  canRetry: boolean;
+  retryCount: number;
   beginAuth(): Promise<void>;
+  retry(): void;
   reset(): void;
+  getRecoveryInstructions?(): { action: string; message: string; delay?: number } | null;
 }
 
-
-
 /**
- * Custom hook for handling MiniKit wallet authentication
- * Follows the official World App MiniKit documentation for walletAuth flow
+ * Enhanced MiniKit wallet authentication hook
+ * Integrates with the new authentication manager and error handling system
  */
 export function useMiniKitWallet(): UseMiniKitWalletReturn {
   const [state, setState] = useState<MiniKitWalletState>({
     inWorldApp: false,
-    status: 'idle'
+    status: 'idle',
+    canRetry: true,
+    retryCount: 0
   });
 
   // Environment detection - check if we're in World App
@@ -69,82 +69,140 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
     return effectiveInWorldApp;
   }, []);
 
+  // Convert auth manager state to hook state
+  const convertAuthState = useCallback((authState: AuthState): Partial<MiniKitWalletState> => {
+    let status: Status;
+    
+    switch (authState.status) {
+      case 'idle':
+        status = 'idle';
+        break;
+      case 'connecting':
+      case 'authenticating':
+        status = 'authing';
+        break;
+      case 'authenticated':
+        status = 'ready';
+        break;
+      case 'error':
+        status = 'error';
+        break;
+      default:
+        status = 'idle';
+    }
+
+    return {
+      status,
+      address: authState.address as `0x${string}` | undefined,
+      sessionId: authState.sessionId || undefined,
+      error: authState.error?.message,
+      enhancedError: authState.error || undefined,
+      canRetry: authState.error?.retryable ?? true,
+      retryCount: authState.attempts
+    };
+  }, []);
+
   // Initialize environment check on mount
   useEffect(() => {
     checkEnvironment();
   }, [checkEnvironment]);
 
+  // Set up authentication manager event listeners
+  useEffect(() => {
+    const handleStateChange = (data: { current: AuthState }) => {
+      const convertedState = convertAuthState(data.current);
+      setState(prev => ({ ...prev, ...convertedState }));
+    };
 
+    const handleError = (error: AuthError) => {
+      logger.walletAuth('error', { 
+        code: error.code, 
+        message: error.message,
+        retryable: error.retryable 
+      });
+    };
+
+    const handleConnecting = () => {
+      logger.walletAuth('connecting', {});
+    };
+
+    const handleAuthenticating = (data: { step: string }) => {
+      logger.walletAuth('authenticating', { step: data.step });
+    };
+
+    const handleAuthenticated = (data: { address: string; sessionId?: string }) => {
+      logger.walletAuth('authenticated', { 
+        address: data.address, 
+        sessionId: data.sessionId 
+      });
+    };
+
+    // Register event listeners
+    authManager.addEventListener('stateChanged', handleStateChange);
+    authManager.addEventListener('error', handleError);
+    authManager.addEventListener('connecting', handleConnecting);
+    authManager.addEventListener('authenticating', handleAuthenticating);
+    authManager.addEventListener('authenticated', handleAuthenticated);
+
+    // Initial state sync
+    const currentState = convertAuthState(authManager.currentState);
+    setState(prev => ({ ...prev, ...currentState }));
+
+    // Cleanup on unmount
+    return () => {
+      authManager.removeEventListener('stateChanged', handleStateChange);
+      authManager.removeEventListener('error', handleError);
+      authManager.removeEventListener('connecting', handleConnecting);
+      authManager.removeEventListener('authenticating', handleAuthenticating);
+      authManager.removeEventListener('authenticated', handleAuthenticated);
+    };
+  }, [convertAuthState]);
 
   // Main authentication function
   const beginAuth = useCallback(async (): Promise<void> => {
     logger.walletAuth('begin', {});
     
-    if (!isWorldApp()) {
-      logger.walletAuth('environment_check_failed', { error: 'MiniKitUnavailable' });
-      throw new Error('MiniKitUnavailable');
-    }
-    
-    logger.walletAuth('authing', {});
-    setState(prev => ({ ...prev, status: 'authing', error: undefined }));
-
     try {
-      logger.walletAuth('fetching_nonce', {});
-      const { nonce } = await (await fetch('/api/siwe/nonce')).json()
-      
-      logger.walletAuth('wallet_auth_request', { nonce });
-      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({ nonce })
-      
-      if (finalPayload?.status === 'error') {
-        logger.walletAuth('wallet_auth_error', { error: finalPayload?.error_code });
-        throw new Error(finalPayload?.error_code ?? 'WalletAuthError');
-      }
-
-      // Extract wallet address from finalPayload or fallback to MiniKit instance
-      const addr = (finalPayload as { address?: string }).address || window.MiniKit?.walletAddress;
-      
-      if (!addr) {
-        logger.walletAuth('wallet_address_missing', {});
-        throw new Error('WalletAddressMissing');
-      }
-      
-      logger.walletAuth('wallet_address_obtained', { address: addr });
-
-      // Optional: SIWE-like verify; MiniKit returns message/signature via finalPayload if configured
-      const { message, signature } = finalPayload
-      if (message && signature) {
-        logger.walletAuth('verifying_signature', { address: addr });
-        const r = await fetch('/api/siwe/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ address: addr, message, signature }) })
-        const v = await r.json()
-        if (!v.ok) {
-          logger.walletAuth('verification_failed', { address: addr });
-          throw new Error('ServerVerifyFailed');
-        }
-        logger.walletAuth('verification_success', { address: addr });
-      }
-
-      logger.walletAuth('auth_complete', { address: addr });
-      setState(prev => ({ ...prev, address: addr as `0x${string}`, status: 'ready' }));
-      
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Unexpected'
-      logger.walletAuth('auth_error', { error: errorMessage, originalError: err });
-      setState(prev => ({ ...prev, error: errorMessage, status: 'error' }))
+      await authManager.authenticate();
+    } catch (error) {
+      // Error handling is done by the authentication manager
+      // Just log for debugging
+      logger.walletAuth('auth_failed', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     }
   }, []);
 
+  // Retry function
+  const retry = useCallback(() => {
+    logger.walletAuth('retry', { retryCount: state.retryCount });
+    authManager.retry();
+  }, [state.retryCount]);
+
   // Reset function to clear state
   const reset = useCallback(() => {
-    setState({
+    logger.walletAuth('reset', {});
+    authManager.reset();
+    setState(prev => ({
       inWorldApp: checkEnvironment(),
-      status: 'idle'
-    });
+      status: 'idle',
+      canRetry: true,
+      retryCount: 0
+    }));
   }, [checkEnvironment]);
+
+  // Get recovery instructions
+  const getRecoveryInstructions = useCallback(() => {
+    if (!state.enhancedError) return null;
+    return errorHandler.getRecoveryInstructions(state.enhancedError);
+  }, [state.enhancedError]);
 
   return {
     ...state,
     beginAuth,
-    reset
+    retry,
+    reset,
+    getRecoveryInstructions
   };
 }
 
