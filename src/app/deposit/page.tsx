@@ -54,8 +54,6 @@ export default function DepositPage() {
           
           <AuthButton 
             onClick={beginAuth}
-            isLoading={status === 'authing'}
-            error={error}
           />
         </div>
       </div>

@@ -171,8 +171,8 @@ authManager.addEventListener('error', (error: unknown) => {
   describe('Development Mode', () => {
     test('should simulate authentication in development mode', async () => {
       // Mock isWorldApp to return false (simulating non-World App environment)
-      const { isWorldApp } = require('../lib/utils');
-      isWorldApp.mockReturnValue(false);
+      const utils = await import('../lib/utils');
+      utils.isWorldApp.mockReturnValue(false);
       
       // Set development environment
       const originalEnv = process.env.NODE_ENV;

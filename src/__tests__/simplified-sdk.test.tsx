@@ -147,7 +147,6 @@ describe("Simplified MiniApp SDK", () => {
         Promise.resolve({ nonce: "mock-nonce", ok: true, success: true }),
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { useWallet, useWorldID, usePayment, useLottery, useMiniApp } = jest.requireMock(
       "../providers/miniapp-provider"
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

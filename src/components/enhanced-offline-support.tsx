@@ -173,6 +173,77 @@ export function EnhancedOfflineSupport({
     };
   }, [autoSync, syncPaused, analytics]);
 
+
+
+  // Trigger sync
+  const triggerSync = useCallback(async () => {
+    if (!isOnline || syncStatus === 'syncing' || syncPaused) {
+      return;
+    }
+
+    setSyncStatus('syncing');
+    setLastSyncError(null);
+    
+    const startTime = Date.now();
+    
+    try {
+      await offline.sync();
+      
+      const duration = Date.now() - startTime;
+      
+      setSyncStatus('success');
+      setSyncStats(prev => ({
+        ...prev,
+        lastSyncTime: new Date(),
+        nextSyncTime: new Date(Date.now() + syncInterval),
+        averageSyncTime: (prev.averageSyncTime + duration / 1000) / 2
+      }));
+      
+      // Reload data after sync
+      await loadOfflineData();
+      
+      analytics.track({
+        name: 'offline_sync_completed',
+        properties: {
+          duration,
+          items_synced: queueItems.length,
+          network_quality: networkQuality,
+          compression_enabled: compressionEnabled,
+          encryption_enabled: encryptionEnabled
+        }
+      });
+      
+      // Reset status after delay
+      setTimeout(() => setSyncStatus('idle'), 2000);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Sync failed';
+      
+      setSyncStatus('error');
+      setLastSyncError(errorMessage);
+      
+      onError?.({
+        code: 'OFFLINE_ERROR',
+        message: errorMessage,
+        timestamp: new Date()
+      });
+      
+      analytics.track({
+        name: 'offline_sync_failed',
+        properties: {
+          error: errorMessage,
+          network_quality: networkQuality,
+          items_pending: queueItems.length
+        }
+      });
+      
+      logger.error('Sync failed', { error: String(error) });
+      
+      // Reset status after delay
+      setTimeout(() => setSyncStatus('idle'), 5000);
+    }
+  }, [isOnline, syncStatus, syncPaused, offline, compressionEnabled, encryptionEnabled, networkQuality, syncInterval, queueItems.length, analytics, onError, loadOfflineData]);
+
   // Auto-sync interval
   useEffect(() => {
     if (!autoSync || !isOnline || syncPaused) {
@@ -187,13 +258,6 @@ export function EnhancedOfflineSupport({
 
     return () => clearInterval(interval);
   }, [autoSync, isOnline, syncPaused, syncStatus, syncInterval, triggerSync]);
-
-  // Load initial data
-  useEffect(() => {
-    loadOfflineData();
-    checkStorageInfo();
-    detectNetworkQuality();
-  }, [loadOfflineData, checkStorageInfo, detectNetworkQuality]);
 
   // Load offline data
   const loadOfflineData = useCallback(async () => {
@@ -331,74 +395,14 @@ export function EnhancedOfflineSupport({
     }
   }, []);
 
-  // Trigger sync
-  const triggerSync = useCallback(async () => {
-    if (!isOnline || syncStatus === 'syncing' || syncPaused) {
-      return;
-    }
+  // Load initial data
+  useEffect(() => {
+    loadOfflineData();
+    checkStorageInfo();
+    detectNetworkQuality();
+  }, [loadOfflineData, checkStorageInfo, detectNetworkQuality]);
 
-    setSyncStatus('syncing');
-    setLastSyncError(null);
-    
-    const startTime = Date.now();
-    
-    try {
-      await offline.sync();
-      
-      const duration = Date.now() - startTime;
-      
-      setSyncStatus('success');
-      setSyncStats(prev => ({
-        ...prev,
-        lastSyncTime: new Date(),
-        nextSyncTime: new Date(Date.now() + syncInterval),
-        averageSyncTime: (prev.averageSyncTime + duration / 1000) / 2
-      }));
-      
-      // Reload data after sync
-      await loadOfflineData();
-      
-      analytics.track({
-        name: 'offline_sync_completed',
-        properties: {
-          duration,
-          items_synced: queueItems.length,
-          network_quality: networkQuality,
-          compression_enabled: compressionEnabled,
-          encryption_enabled: encryptionEnabled
-        }
-      });
-      
-      // Reset status after delay
-      setTimeout(() => setSyncStatus('idle'), 2000);
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Sync failed';
-      
-      setSyncStatus('error');
-      setLastSyncError(errorMessage);
-      
-      onError?.({
-        code: 'OFFLINE_ERROR', // Using available SDKErrorCode for sync errors
-        message: errorMessage,
-        timestamp: new Date()
-      });
-      
-      analytics.track({
-        name: 'offline_sync_failed',
-        properties: {
-          error: errorMessage,
-          network_quality: networkQuality,
-          items_pending: queueItems.length
-        }
-      });
-      
-      logger.error('Sync failed', { error: String(error) });
-      
-      // Reset status after delay
-      setTimeout(() => setSyncStatus('idle'), 5000);
-    }
-  }, [isOnline, syncStatus, syncPaused, offline, compressionEnabled, encryptionEnabled, networkQuality, syncInterval, queueItems.length, analytics, onError, loadOfflineData]);
+
 
   // Clear offline data
   const clearOfflineData = useCallback(async (category?: string) => {

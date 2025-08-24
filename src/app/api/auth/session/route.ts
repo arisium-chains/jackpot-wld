@@ -364,4 +364,5 @@ export async function DELETE(req: Request) {
 }
 
 // Export for use in other modules
-export { sessionStore, validateSession, createSession, updateSession };
+// Note: sessionStore, validateSession, createSession, updateSession are internal functions
+// and should not be exported from Next.js API routes
