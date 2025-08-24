@@ -57,11 +57,21 @@ const DEFAULT_AUTH_OPTIONS: AuthenticationOptions = {
 /**
  * Enhanced Authentication Manager Class
  */
+// Event listener types
+type EventCallback = (...args: unknown[]) => void;
+
+// Authentication payload types
+interface AuthPayload {
+  address?: string;
+  signature?: string;
+  [key: string]: unknown;
+}
+
 export class AuthenticationManager {
   private state: AuthState;
   private options: AuthenticationOptions;
   private retryTimeoutId: NodeJS.Timeout | null = null;
-  private eventListeners = new Map<string, Function[]>();
+  private eventListeners = new Map<string, EventCallback[]>();
 
   constructor(options: Partial<AuthenticationOptions> = {}) {
     this.options = { ...DEFAULT_AUTH_OPTIONS, ...options };
@@ -89,14 +99,14 @@ export class AuthenticationManager {
   }
 
   // Event management
-  addEventListener(event: string, callback: Function): void {
+  addEventListener(event: string, callback: EventCallback): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
     this.eventListeners.get(event)!.push(callback);
   }
 
-  removeEventListener(event: string, callback: Function): void {
+  removeEventListener(event: string, callback: EventCallback): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       const index = listeners.indexOf(callback);
@@ -371,7 +381,7 @@ export class AuthenticationManager {
       }
 
       // Step 4: Extract address and signature
-      const payload = authResult.finalPayload as any;
+      const payload = authResult.finalPayload as AuthPayload;
       const address = payload.address || window.MiniKit?.walletAddress;
       
       if (!address) {
@@ -389,8 +399,8 @@ export class AuthenticationManager {
         
         const verificationResult = await this.verifySignature(
           address,
-          payload.message,
-          payload.signature
+          payload.message as string,
+          payload.signature as string
         );
 
         if (!verificationResult.ok) {

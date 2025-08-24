@@ -103,7 +103,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     );
   }, [config.performance]);
 
-  const handleOptimize = async () => {
+  const handleOptimize = useCallback(async () => {
     if (!optimizer || isOptimizing) return;
 
     setIsOptimizing(true);
@@ -116,7 +116,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     } finally {
       setIsOptimizing(false);
     }
-  };
+  }, [optimizer, isOptimizing, onOptimizationComplete]);
 
   // Monitor performance metrics
   useEffect(() => {

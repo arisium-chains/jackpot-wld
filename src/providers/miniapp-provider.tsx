@@ -240,7 +240,7 @@ export function MiniAppProvider({
   // World ID Actions
   const worldIdActions: WorldIDActions = {
     verify: async (action: string, signal?: string) => {
-      const proof = await miniAppSDK.verifyWorldID(action);
+      const proof = await miniAppSDK.verifyWorldID(action, signal);
       syncState();
       return proof;
     },

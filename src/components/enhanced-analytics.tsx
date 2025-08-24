@@ -277,7 +277,7 @@ export function EnhancedAnalytics({
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTimeRange, enableHeatmap, enableSessionRecording, onError]);
+  }, [enableHeatmap, enableSessionRecording, onError]);
 
   // Track page view
   const trackPageView = useCallback(async () => {
@@ -346,17 +346,7 @@ export function EnhancedAnalytics({
     }
   }, [customEvent, analytics, onError]);
 
-  // Update user properties
-  const updateUserProperties = useCallback(async (properties: UserProperties) => {
-    try {
-      await analytics.setUserProperties(properties);
-      setUserProperties(prev => ({ ...prev, ...properties }));
-      
-      logger.info('User properties updated', { properties: JSON.stringify(properties) });
-    } catch (error) {
-      logger.error('Failed to update user properties', { error: String(error) });
-    }
-  }, [analytics]);
+
 
   // Get metric icon
   const getMetricIcon = useCallback((metricId: string) => {

@@ -6,7 +6,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useEnhancedMiniKit, useEnhancedAnalytics } from '../providers/enhanced-minikit-provider';
+import { useEnhancedMiniKit } from '../providers/enhanced-minikit-provider';
 import { SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
 
@@ -99,12 +99,9 @@ export function EnhancedUIOptimizations({
   enableGestureOptimization = true,
   enableAccessibility = true,
   enablePerformanceMonitoring = true,
-  maxConcurrentImages = 5,
   virtualScrollThreshold = 100
 }: EnhancedUIOptimizationsProps) {
-  // Hooks
-  const miniKit = useEnhancedMiniKit();
-  const analytics = useEnhancedAnalytics();
+  const { analytics } = useEnhancedMiniKit();
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -172,12 +169,12 @@ export function EnhancedUIOptimizations({
     return () => {
       cleanup();
     };
-  }, []);
+  }, [initializeOptimizations, detectDeviceCapabilities, setupPerformanceMonitoring, setupAccessibilityFeatures, cleanup]);
 
   // Apply optimizations when settings change
   useEffect(() => {
     applyOptimizations();
-  }, [optimizationSettings, gestureConfig, imageOptimization]);
+  }, [applyOptimizations, optimizationSettings, gestureConfig, imageOptimization]);
 
   // Initialize optimizations
   const initializeOptimizations = useCallback(async () => {
@@ -248,7 +245,7 @@ export function EnhancedUIOptimizations({
     } finally {
       setIsOptimizing(false);
     }
-  }, [enableVirtualization, enableLazyLoading, enableGestureOptimization, enableImageOptimization, deviceCapabilities, analytics, onError]);
+  }, [setupVirtualScrolling, setupLazyLoading, setupGestureOptimization, setupImageOptimization, enableVirtualization, enableLazyLoading, enableGestureOptimization, enableImageOptimization, deviceCapabilities, analytics, onError]);
 
   // Detect device capabilities
   const detectDeviceCapabilities = useCallback(() => {
@@ -581,14 +578,7 @@ export function EnhancedUIOptimizations({
     }
   }, []);
 
-  // Format file size
-  const formatFileSize = useCallback((bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }, []);
+
 
   // Get performance status
   const getPerformanceStatus = useCallback(() => {

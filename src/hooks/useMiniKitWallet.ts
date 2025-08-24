@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { AuthenticationManager, AuthState, AuthError } from '../lib/auth-manager';
-import { errorHandler, AuthErrorType, EnhancedError } from '../lib/error-handler';
+import { errorHandler, EnhancedError } from '../lib/error-handler';
 import { isWorldApp } from '../lib/utils';
 import { logger } from '../lib/logger';
 
@@ -183,12 +183,12 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
   const reset = useCallback(() => {
     logger.walletAuth('reset', {});
     authManager.reset();
-    setState(prev => ({
+    setState({
       inWorldApp: checkEnvironment(),
       status: 'idle',
       canRetry: true,
       retryCount: 0
-    }));
+    });
   }, [checkEnvironment]);
 
   // Get recovery instructions

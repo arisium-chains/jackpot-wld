@@ -137,7 +137,6 @@ const DEFAULT_CATEGORIES: NotificationCategory[] = [
  */
 export function EnhancedPushNotifications({
   onPermissionChange,
-  onNotificationReceived,
   onError,
   className = '',
   showHistory = true,
@@ -171,21 +170,21 @@ export function EnhancedPushNotifications({
   // Check permission status on mount
   useEffect(() => {
     checkPermissionStatus();
-  }, []);
+  }, [checkPermissionStatus]);
 
   // Load notification history
   useEffect(() => {
     if (showHistory) {
       loadNotificationHistory();
     }
-  }, [showHistory]);
+  }, [showHistory, loadNotificationHistory]);
 
   // Auto-request permission if enabled
   useEffect(() => {
     if (autoRequestPermission && permissionStatus === 'default') {
       requestPermission();
     }
-  }, [autoRequestPermission, permissionStatus]);
+  }, [autoRequestPermission, permissionStatus, requestPermission]);
 
   // Update permission change callback
   useEffect(() => {

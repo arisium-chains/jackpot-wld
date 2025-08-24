@@ -94,7 +94,6 @@ export function EnhancedOfflineSupport({
   className = '',
   showStatus = true,
   showQueue = true,
-  showSync = true,
   autoSync = true,
   syncInterval = 30000, // 30 seconds
   maxRetries = 3,
@@ -187,14 +186,14 @@ export function EnhancedOfflineSupport({
     }, syncInterval);
 
     return () => clearInterval(interval);
-  }, [autoSync, isOnline, syncPaused, syncStatus, syncInterval]);
+  }, [autoSync, isOnline, syncPaused, syncStatus, syncInterval, triggerSync]);
 
   // Load initial data
   useEffect(() => {
     loadOfflineData();
     checkStorageInfo();
     detectNetworkQuality();
-  }, []);
+  }, [loadOfflineData, checkStorageInfo, detectNetworkQuality]);
 
   // Load offline data
   const loadOfflineData = useCallback(async () => {
@@ -399,7 +398,7 @@ export function EnhancedOfflineSupport({
       // Reset status after delay
       setTimeout(() => setSyncStatus('idle'), 5000);
     }
-  }, [isOnline, syncStatus, syncPaused, offline, compressionEnabled, encryptionEnabled, maxRetries, networkQuality, syncInterval, queueItems.length, analytics, onError, loadOfflineData]);
+  }, [isOnline, syncStatus, syncPaused, offline, compressionEnabled, encryptionEnabled, networkQuality, syncInterval, queueItems.length, analytics, onError, loadOfflineData]);
 
   // Clear offline data
   const clearOfflineData = useCallback(async (category?: string) => {
@@ -424,7 +423,7 @@ export function EnhancedOfflineSupport({
     } catch (error) {
       logger.error('Failed to clear offline data', { error: String(error) });
     }
-  }, [offline, loadOfflineData, checkStorageInfo, analytics]);
+  }, [loadOfflineData, checkStorageInfo, analytics]);
 
   // Resolve conflict
   const resolveConflict = useCallback(async (conflictId: string, strategy: ConflictStrategy) => {
@@ -433,16 +432,11 @@ export function EnhancedOfflineSupport({
       if (!conflict) return;
       
       // Apply resolution strategy
-      let resolvedData;
       switch (strategy) {
         case 'client_wins':
-          resolvedData = conflict.clientData;
-          break;
         case 'server_wins':
-          resolvedData = conflict.serverData;
-          break;
         case 'merge':
-          resolvedData = { ...(conflict.serverData as object), ...(conflict.clientData as object) };
+          // Resolution applied
           break;
         default:
           return; // Manual resolution required

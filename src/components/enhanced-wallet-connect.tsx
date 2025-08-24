@@ -52,20 +52,20 @@ export function EnhancedWalletConnect({
 
   // Auto-connect effect
   useEffect(() => {
-    if (autoConnect && isReady && !wallet.state.isConnected && !isConnecting && retryCount < 3) {
-      const timeSinceLastAttempt = lastConnectAttempt ? Date.now() - lastConnectAttempt.getTime() : Infinity;
-      if (timeSinceLastAttempt > 5000) { // Wait 5 seconds between auto-connect attempts
-        handleConnect();
-      }
+  if (autoConnect && isReady && !wallet.state.isConnected && !isConnecting && retryCount < 3) {
+    const timeSinceLastAttempt = lastConnectAttempt ? Date.now() - lastConnectAttempt.getTime() : Infinity;
+    if (timeSinceLastAttempt > 5000) { // Wait 5 seconds between auto-connect attempts
+      handleConnect();
     }
-  }, [autoConnect, isReady, wallet.state.isConnected, isConnecting, retryCount, lastConnectAttempt]);
+  }
+}, [autoConnect, isReady, wallet.state.isConnected, isConnecting, retryCount, lastConnectAttempt, handleConnect]);
 
   // Load balance when connected
   useEffect(() => {
-    if (wallet.state.isConnected && showBalance) {
-      loadBalance();
-    }
-  }, [wallet.state.isConnected, showBalance]);
+  if (wallet.state.isConnected && showBalance) {
+    loadBalance();
+  }
+}, [wallet.state.isConnected, showBalance, loadBalance]);
 
   // Handle errors
   useEffect(() => {

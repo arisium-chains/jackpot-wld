@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useEnhancedWorldID, useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
-import { WorldIDVerificationOptions, WorldIDResponse, WorldIDProof, SDKError } from '../types/miniapp-sdk';
+import { WorldIDVerificationOptions, WorldIDProof, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
 
 /**
@@ -79,14 +79,14 @@ export function EnhancedWorldID({
     if (showVerificationHistory) {
       loadVerificationHistory();
     }
-  }, [showVerificationHistory]);
+  }, [showVerificationHistory, loadVerificationHistory]);
 
   // Auto-verify if enabled
   useEffect(() => {
     if (autoVerify && verificationStatus === 'idle' && !isProcessing) {
       handleVerification();
     }
-  }, [autoVerify, verificationStatus, isProcessing]);
+  }, [autoVerify, verificationStatus, isProcessing, handleVerification]);
 
   // Update verification status callback
   useEffect(() => {

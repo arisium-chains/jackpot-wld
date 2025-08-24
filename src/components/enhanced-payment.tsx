@@ -50,7 +50,6 @@ export function EnhancedPayment({
   memo = '',
   onSuccess,
   onError,
-  onTransactionUpdate,
   className = '',
   showHistory = true,
   allowTokenSelection = true,
@@ -77,18 +76,6 @@ export function EnhancedPayment({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [estimatedGas, setEstimatedGas] = useState<string>('0');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  // Load payment history
-  useEffect(() => {
-    if (showHistory && wallet.state.isConnected) {
-      loadPaymentHistory();
-    }
-  }, [showHistory, wallet.state.isConnected]);
-
-  // Validate form on changes
-  useEffect(() => {
-    validateForm();
-  }, [formData, maxAmount, minAmount]);
 
   // Load payment history
   const loadPaymentHistory = useCallback(async () => {
@@ -133,9 +120,23 @@ export function EnhancedPayment({
       errors.token = 'Unsupported token';
     }
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFormErrors(errors);
+    setIsFormValid(Object.keys(errors).length === 0);
   }, [formData, maxAmount, minAmount]);
+
+  // Load payment history
+  useEffect(() => {
+    if (showHistory && wallet.state.isConnected) {
+      loadPaymentHistory();
+    }
+  }, [showHistory, wallet.state.isConnected, loadPaymentHistory]);
+
+  // Validate form on changes
+  useEffect(() => {
+    validateForm();
+  }, [formData, maxAmount, minAmount, validateForm]);
+
+
 
   // Estimate gas fees
   const estimateGas = useCallback(async () => {
@@ -148,7 +149,7 @@ export function EnhancedPayment({
       logger.error('Failed to estimate gas', { error: String(error) });
       setEstimatedGas('Unknown');
     }
-  }, [formData]);
+  }, []);
 
   // Handle form input changes
   const handleInputChange = useCallback((field: string, value: string) => {

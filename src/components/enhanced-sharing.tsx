@@ -7,6 +7,7 @@
 
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { useEnhancedSharing, useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
 import { ShareOptions, ShareResponse, SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
@@ -80,18 +81,6 @@ export function EnhancedSharing({
   const [customUrl, setCustomUrl] = useState(url);
 
   // Load share history
-  useEffect(() => {
-    loadShareHistory();
-  }, []);
-
-  // Generate QR code data
-  useEffect(() => {
-    if (showQRCode) {
-      generateQRCode();
-    }
-  }, [customUrl, showQRCode]);
-
-  // Load share history
   const loadShareHistory = useCallback(async () => {
     try {
       const stored = localStorage.getItem('sharing-history');
@@ -114,6 +103,18 @@ export function EnhancedSharing({
     }
   }, []);
 
+  // Generate QR code
+  const generateQRCode = useCallback(async () => {
+    try {
+      // This would typically use a QR code generation library
+      // For now, we'll create a simple data URL
+      const qrData = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(customUrl)}`;
+      setQrCodeData(qrData);
+    } catch (error) {
+      logger.error('Failed to generate QR code', { error: String(error) });
+    }
+  }, [customUrl]);
+
   // Save share to history
   const saveShareToHistory = useCallback((item: Omit<ShareHistoryItem, 'id'>) => {
     const historyItem: ShareHistoryItem = {
@@ -131,18 +132,6 @@ export function EnhancedSharing({
       logger.error('Failed to save share history', { error: String(error) });
     }
   }, [shareHistory]);
-
-  // Generate QR code
-  const generateQRCode = useCallback(async () => {
-    try {
-      // This would typically use a QR code generation library
-      // For now, we'll create a simple data URL
-      const qrData = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(customUrl)}`;
-      setQrCodeData(qrData);
-    } catch (error) {
-      logger.error('Failed to generate QR code', { error: String(error) });
-    }
-  }, [customUrl]);
 
   // Handle native sharing
   const handleNativeShare = useCallback(async () => {
@@ -248,7 +237,6 @@ export function EnhancedSharing({
       let shareUrl = '';
       const encodedUrl = encodeURIComponent(customUrl);
       const encodedTitle = encodeURIComponent(customTitle);
-      const encodedDescription = encodeURIComponent(customDescription);
 
       switch (platform) {
         case 'twitter':
@@ -315,7 +303,7 @@ export function EnhancedSharing({
       setShareError(errorMessage);
       logger.error(`Social share to ${platform} failed`, { error: String(error) });
     }
-  }, [customTitle, customDescription, customUrl, analytics, trackSharing, saveShareToHistory]);
+  }, [customTitle, customUrl, analytics, trackSharing, saveShareToHistory]);
 
   // Handle copy link
   const handleCopyLink = useCallback(async () => {
@@ -404,6 +392,18 @@ export function EnhancedSharing({
   const formatTimestamp = useCallback((timestamp: Date) => {
     return timestamp.toLocaleString();
   }, []);
+
+  // Load share history
+  useEffect(() => {
+    loadShareHistory();
+  }, [loadShareHistory]);
+
+  // Generate QR code data
+  useEffect(() => {
+    if (showQRCode) {
+      generateQRCode();
+    }
+  }, [customUrl, showQRCode, generateQRCode]);
 
   return (
     <div className={`enhanced-sharing ${className}`}>
@@ -535,9 +535,9 @@ export function EnhancedSharing({
         {/* QR Code Display */}
         {showQR && qrCodeData && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
-            <img
+            <Image
               src={qrCodeData}
-              alt="QR Code"
+              alt={`QR Code for sharing: ${customTitle || 'link'}`}
               className="mx-auto mb-2"
               width={200}
               height={200}

@@ -87,7 +87,6 @@ interface AmountInputProps {
   label: string;
   placeholder?: string;
   max?: string;
-  min?: string;
   disabled?: boolean;
   error?: string;
 }
@@ -98,7 +97,6 @@ function AmountInput({
   label,
   placeholder = "0.0",
   max,
-  min = "0",
   disabled = false,
   error,
 }: AmountInputProps) {
@@ -284,12 +282,13 @@ export function PaymentManager({
   }, [
     sendAmount,
     sendAddress,
-    payment.sendWLD,
+    payment,
     wallet.address,
     onPaymentSuccess,
     onPaymentError,
     validateAmount,
     validateAddress,
+    setErrors
   ]);
 
   // Handle deposit to lottery
@@ -352,12 +351,14 @@ export function PaymentManager({
     }
   }, [
     depositAmount,
-    payment.deposit,
+    payment,
     wallet.address,
     worldId.isVerified,
     onPaymentSuccess,
     onPaymentError,
     validateAmount,
+    setErrors,
+    setDepositAmount
   ]);
 
   // Handle withdraw from lottery
@@ -414,11 +415,13 @@ export function PaymentManager({
     }
   }, [
     withdrawAmount,
-    payment.withdraw,
+    payment,
     wallet.address,
     onPaymentSuccess,
     onPaymentError,
     validateAmount,
+    setErrors,
+    setWithdrawAmount
   ]);
 
   // Format transaction display
