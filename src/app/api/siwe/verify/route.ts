@@ -1,18 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyMessage, isAddress } from 'viem'
-import { defineChain } from 'viem/utils'
 import { logger } from '../../../../lib/logger'
-
-const worldSepolia = defineChain({
-  id: 4801,
-  name: 'World Chain Sepolia',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: {
-    default: {
-      http: [process.env.WORLDC_SEPOLIA_RPC_URL || 'https://worldchain-sepolia.g.alchemy.com/v2/demo']
-    }
-  }
-})
 
 // Types for enhanced validation
 interface SIWERequest {
@@ -22,18 +10,7 @@ interface SIWERequest {
   nonce?: string;
 }
 
-interface SIWEMessage {
-  domain: string;
-  address: string;
-  statement: string;
-  uri: string;
-  version: string;
-  chainId: string;
-  nonce: string;
-  issuedAt: string;
-  expirationTime?: string;
-  notBefore?: string;
-}
+
 
 interface ValidationResult {
   valid: boolean;
@@ -65,7 +42,7 @@ function validateSIWEMessage(message: string): ValidationResult {
       return { valid: false, error: 'InvalidSIWEFormat', details: { pattern: 'EIP-4361_mismatch' } };
     }
     
-    const [, domain, address, statement, uri, version, chainId, nonce, issuedAt, expirationTime, notBefore] = match;
+    const [, domain, address, , , version, chainId, nonce, issuedAt, expirationTime] = match;
     
     // Validate domain
     if (!domain || domain.length === 0) {

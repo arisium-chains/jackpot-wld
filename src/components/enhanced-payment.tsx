@@ -21,7 +21,6 @@ interface EnhancedPaymentProps {
   memo?: string;
   onSuccess?: (response: PaymentResponse) => void;
   onError?: (error: SDKError) => void;
-  onTransactionUpdate?: (transaction: PaymentTransaction) => void;
   className?: string;
   showHistory?: boolean;
   allowTokenSelection?: boolean;
@@ -76,6 +75,7 @@ export function EnhancedPayment({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [estimatedGas, setEstimatedGas] = useState<string>('0');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [isFormValid, setIsFormValid] = useState(false);
 
   // Load payment history
   const loadPaymentHistory = useCallback(async () => {
@@ -120,8 +120,9 @@ export function EnhancedPayment({
       errors.token = 'Unsupported token';
     }
 
-    setFormErrors(errors);
+    setValidationErrors(errors);
     setIsFormValid(Object.keys(errors).length === 0);
+    return Object.keys(errors).length === 0;
   }, [formData, maxAmount, minAmount]);
 
   // Load payment history
@@ -159,7 +160,7 @@ export function EnhancedPayment({
 
   // Handle payment submission
   const handlePayment = useCallback(async () => {
-    if (!validateForm() || !wallet.state.isConnected || isProcessing) {
+    if (!isFormValid || !wallet.state.isConnected || isProcessing) {
       return;
     }
 
@@ -246,7 +247,7 @@ export function EnhancedPayment({
     } finally {
       setIsProcessing(false);
     }
-  }, [formData, wallet.state, isProcessing, validateForm, payment, analytics, onSuccess, onError, loadPaymentHistory]);
+  }, [formData, wallet.state, isProcessing, isFormValid, payment, analytics, onSuccess, onError, loadPaymentHistory]);
 
   // Format transaction hash for display
   const formatTxHash = useCallback((hash: string) => {

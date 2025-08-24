@@ -5,17 +5,9 @@ import { DepositForm, WorldIDVerification, UserAccountStats, OpenInWorldAppBanne
 import { Card } from '@/components/ui/card';
 import { useMiniKitWallet } from '@/hooks/useMiniKitWallet';
 
-interface VerificationProof {
-  merkle_root: string;
-  nullifier_hash: string;
-  proof: string;
-  verification_level: string;
-}
-
 export default function DepositPage() {
   const [isVerified, setIsVerified] = useState(false);
-  const [verificationProof, setVerificationProof] = useState<VerificationProof | null>(null);
-  const { inWorldApp, status, address, error, beginAuth } = useMiniKitWallet();
+  const { inWorldApp, status, address, beginAuth } = useMiniKitWallet();
 
   const handleVerificationComplete = (verified: boolean) => {
     setIsVerified(verified);

@@ -43,7 +43,6 @@ import {
   useMiniApp,
   useWallet,
   useWorldID,
-  usePayment,
 } from "../../providers/miniapp-provider";
 import { logger } from "../../lib/logger";
 import { toast } from "sonner";

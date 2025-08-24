@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { AuthenticationManager } from '../lib/auth-manager';
 import { AuthErrorHandler, AuthErrorType } from '../lib/auth-error-handler';
+import * as utils from '../lib/utils';
 import '@testing-library/jest-dom';
 
 // Mock dependencies
@@ -171,8 +172,7 @@ authManager.addEventListener('error', (error: unknown) => {
   describe('Development Mode', () => {
     test('should simulate authentication in development mode', async () => {
       // Mock isWorldApp to return false (simulating non-World App environment)
-      const utils = await import('../lib/utils');
-      utils.isWorldApp.mockReturnValue(false);
+      (utils.isWorldApp as jest.MockedFunction<typeof utils.isWorldApp>).mockReturnValue(false);
       
       // Set development environment
       const originalEnv = process.env.NODE_ENV;

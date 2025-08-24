@@ -239,8 +239,8 @@ export function MiniAppProvider({
 
   // World ID Actions
   const worldIdActions: WorldIDActions = {
-    verify: async (action: string, signal?: string) => {
-      const proof = await miniAppSDK.verifyWorldID(action, signal);
+    verify: async (action: string) => {
+      const proof = await miniAppSDK.verifyWorldID(action);
       syncState();
       return proof;
     },

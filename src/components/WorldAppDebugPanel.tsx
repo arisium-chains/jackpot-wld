@@ -13,13 +13,10 @@ import {
   Bug, 
   Download, 
   Trash2, 
-  Search, 
-  Filter, 
   Eye, 
   EyeOff, 
   RefreshCw,
-  Copy,
-  Settings
+  Copy
 } from 'lucide-react'
 
 interface LogEntry {

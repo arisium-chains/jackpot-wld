@@ -131,49 +131,90 @@ export function EnhancedOfflineSupport({
   const [lastSyncError, setLastSyncError] = useState<string | null>(null);
   const [networkQuality, setNetworkQuality] = useState<'fast' | 'slow' | 'offline'>('fast');
 
-  // Monitor online/offline status
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      setNetworkQuality('fast');
-      
-      if (autoSync && !syncPaused) {
-        triggerSync();
-      }
-      
-      analytics.track({
-        name: 'network_status_changed',
-        properties: {
-          status: 'online',
-          timestamp: new Date().toISOString()
+
+
+  // Load offline data
+  const loadOfflineData = useCallback(async () => {
+    try {
+      // Load queue items
+      const items = offline.queue;
+      setQueueItems(items);
+
+      // Load data categories
+      const categories: DataCategory[] = [
+        {
+          id: 'transactions',
+          name: 'Transactions',
+          count: 15,
+          size: 2048,
+          lastUpdated: new Date(Date.now() - 300000),
+          syncEnabled: true,
+          priority: 'high'
+        },
+        {
+          id: 'user_data',
+          name: 'User Data',
+          count: 8,
+          size: 1024,
+          lastUpdated: new Date(Date.now() - 600000),
+          syncEnabled: true,
+          priority: 'high'
+        },
+        {
+          id: 'analytics',
+          name: 'Analytics Events',
+          count: 42,
+          size: 512,
+          lastUpdated: new Date(Date.now() - 120000),
+          syncEnabled: true,
+          priority: 'medium'
+        },
+        {
+          id: 'cache',
+          name: 'Cache Data',
+          count: 128,
+          size: 8192,
+          lastUpdated: new Date(Date.now() - 900000),
+          syncEnabled: false,
+          priority: 'low'
         }
+      ];
+      setDataCategories(categories);
+
+      // Load sync stats
+      const stats: SyncStats = {
+        totalItems: items.length,
+        syncedItems: items.filter((item: OfflineQueueItem) => item.retryCount === 0).length,
+        failedItems: items.filter((item: OfflineQueueItem) => item.retryCount >= maxRetries).length,
+        lastSyncTime: new Date(Date.now() - 180000),
+        nextSyncTime: new Date(Date.now() + syncInterval),
+        averageSyncTime: 2.3,
+        dataTransferred: 15360
+      };
+      setSyncStats(stats);
+
+      // Load storage info
+      const storageInfo: StorageInfo = {
+        used: 12288,
+        available: 51200,
+        total: 63488,
+        percentage: 19.4
+      };
+      setStorageInfo(storageInfo);
+
+      // Load conflicts
+      const conflicts: DataConflict[] = [];
+      setConflicts(conflicts);
+
+    } catch (error) {
+      logger.error('Failed to load offline data', { error: String(error) });
+      onError?.({
+        code: 'OFFLINE_ERROR',
+        message: 'Failed to load offline data',
+        timestamp: new Date()
       });
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      setNetworkQuality('offline');
-      setSyncStatus('idle');
-      
-      analytics.track({
-        name: 'network_status_changed',
-        properties: {
-          status: 'offline',
-          timestamp: new Date().toISOString()
-        }
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [autoSync, syncPaused, analytics]);
-
-
+    }
+  }, [offline.queue, maxRetries, syncInterval, onError]);
 
   // Trigger sync
   const triggerSync = useCallback(async () => {
@@ -244,6 +285,48 @@ export function EnhancedOfflineSupport({
     }
   }, [isOnline, syncStatus, syncPaused, offline, compressionEnabled, encryptionEnabled, networkQuality, syncInterval, queueItems.length, analytics, onError, loadOfflineData]);
 
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setNetworkQuality('fast');
+      
+      if (autoSync && !syncPaused) {
+        triggerSync();
+      }
+      
+      analytics.track({
+        name: 'network_status_changed',
+        properties: {
+          status: 'online',
+          timestamp: new Date().toISOString()
+        }
+      });
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setNetworkQuality('offline');
+      setSyncStatus('idle');
+      
+      analytics.track({
+        name: 'network_status_changed',
+        properties: {
+          status: 'offline',
+          timestamp: new Date().toISOString()
+        }
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [autoSync, syncPaused, analytics, triggerSync]);
+
   // Auto-sync interval
   useEffect(() => {
     if (!autoSync || !isOnline || syncPaused) {
@@ -258,84 +341,6 @@ export function EnhancedOfflineSupport({
 
     return () => clearInterval(interval);
   }, [autoSync, isOnline, syncPaused, syncStatus, syncInterval, triggerSync]);
-
-  // Load offline data
-  const loadOfflineData = useCallback(async () => {
-    try {
-      // Load queue items
-      const items = offline.queue;
-      setQueueItems(items);
-
-      // Load data categories
-      const categories: DataCategory[] = [
-        {
-          id: 'transactions',
-          name: 'Transactions',
-          count: 15,
-          size: 2048,
-          lastUpdated: new Date(Date.now() - 300000),
-          syncEnabled: true,
-          priority: 'high'
-        },
-        {
-          id: 'user_data',
-          name: 'User Data',
-          count: 8,
-          size: 1024,
-          lastUpdated: new Date(Date.now() - 600000),
-          syncEnabled: true,
-          priority: 'high'
-        },
-        {
-          id: 'analytics',
-          name: 'Analytics Events',
-          count: 42,
-          size: 512,
-          lastUpdated: new Date(Date.now() - 120000),
-          syncEnabled: true,
-          priority: 'medium'
-        },
-        {
-          id: 'cache',
-          name: 'Cache Data',
-          count: 128,
-          size: 8192,
-          lastUpdated: new Date(Date.now() - 900000),
-          syncEnabled: false,
-          priority: 'low'
-        }
-      ];
-      setDataCategories(categories);
-
-      // Load sync stats
-      const stats: SyncStats = {
-        totalItems: items.length,
-        syncedItems: items.filter((item: OfflineQueueItem) => item.retryCount === 0).length,
-        failedItems: items.filter((item: OfflineQueueItem) => item.retryCount >= maxRetries).length,
-        lastSyncTime: new Date(Date.now() - 180000),
-        nextSyncTime: new Date(Date.now() + syncInterval),
-        averageSyncTime: 2.3,
-        dataTransferred: 15360
-      };
-      setSyncStats(stats);
-
-      // Load conflicts
-      const mockConflicts: DataConflict[] = [
-        {
-          id: 'conflict-1',
-          type: 'user_preference',
-          clientData: { theme: 'dark', language: 'en' },
-          serverData: { theme: 'light', language: 'es' },
-          timestamp: new Date(Date.now() - 600000),
-          resolved: false
-        }
-      ];
-      setConflicts(mockConflicts);
-
-    } catch (error) {
-      logger.error('Failed to load offline data', { error: String(error) });
-    }
-  }, [offline, maxRetries, syncInterval]);
 
   // Check storage info
   const checkStorageInfo = useCallback(async () => {

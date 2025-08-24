@@ -167,30 +167,6 @@ export function EnhancedPushNotifications({
     keys?: { p256dh: string; auth: string };
   }>({});
 
-  // Check permission status on mount
-  useEffect(() => {
-    checkPermissionStatus();
-  }, [checkPermissionStatus]);
-
-  // Load notification history
-  useEffect(() => {
-    if (showHistory) {
-      loadNotificationHistory();
-    }
-  }, [showHistory, loadNotificationHistory]);
-
-  // Auto-request permission if enabled
-  useEffect(() => {
-    if (autoRequestPermission && permissionStatus === 'default') {
-      requestPermission();
-    }
-  }, [autoRequestPermission, permissionStatus, requestPermission]);
-
-  // Update permission change callback
-  useEffect(() => {
-    onPermissionChange?.(permissionStatus === 'granted');
-  }, [permissionStatus, onPermissionChange]);
-
   // Check current permission status
   const checkPermissionStatus = useCallback(async () => {
     try {
@@ -211,7 +187,44 @@ export function EnhancedPushNotifications({
     }
   }, [notifications]);
 
-  // Request notification permission
+  // Load notification history
+  const loadNotificationHistory = useCallback(async () => {
+    try {
+      const stored = localStorage.getItem('notification-history');
+      if (stored) {
+        const history = JSON.parse(stored).map((item: {
+          id: string;
+          title: string;
+          body: string;
+          category?: string;
+          timestamp: string;
+          read: boolean;
+          clicked: boolean;
+          dismissed: boolean;
+        }) => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
+        }));
+        setNotificationHistory(history);
+        setUnreadCount(history.filter((item: NotificationHistoryItem) => !item.read).length);
+      }
+    } catch (error) {
+      logger.error('Failed to load notification history', { error: String(error) });
+    }
+  }, []);
+
+  // Check permission status on mount
+  useEffect(() => {
+    checkPermissionStatus();
+  }, [checkPermissionStatus]);
+
+  // Load notification history
+  useEffect(() => {
+    if (showHistory) {
+      loadNotificationHistory();
+    }
+  }, [showHistory, loadNotificationHistory]);
+
   const requestPermission = useCallback(async () => {
     if (isProcessing || permissionStatus === 'granted') {
       return;
@@ -280,6 +293,22 @@ export function EnhancedPushNotifications({
       setIsProcessing(false);
     }
   }, [isProcessing, permissionStatus, notifications, analytics, wallet.state, autoRequestPermission, onError]);
+
+  // Effect to request permission automatically if enabled
+  useEffect(() => {
+    if (autoRequestPermission && permissionStatus === 'default') {
+      requestPermission();
+    }
+  }, [autoRequestPermission, permissionStatus, requestPermission]);
+
+  // Update permission change callback
+  useEffect(() => {
+    onPermissionChange?.(permissionStatus === 'granted');
+  }, [permissionStatus, onPermissionChange]);
+
+
+
+
 
   // Send test notification
   const sendTestNotification = useCallback(async () => {
@@ -353,31 +382,6 @@ export function EnhancedPushNotifications({
   }, [permissionStatus, testNotification, notifications, analytics, onError]);
 
   // Load notification history
-  const loadNotificationHistory = useCallback(async () => {
-    try {
-      const stored = localStorage.getItem('notification-history');
-      if (stored) {
-        const history = JSON.parse(stored).map((item: {
-          id: string;
-          title: string;
-          body: string;
-          category?: string;
-          timestamp: string;
-          read: boolean;
-          clicked: boolean;
-          dismissed: boolean;
-        }) => ({
-          ...item,
-          timestamp: new Date(item.timestamp)
-        }));
-        setNotificationHistory(history);
-        setUnreadCount(history.filter((item: NotificationHistoryItem) => !item.read).length);
-      }
-    } catch (error) {
-      logger.error('Failed to load notification history', { error: String(error) });
-    }
-  }, []);
-
   // Save notification history
   const saveNotificationHistory = useCallback((history: NotificationHistoryItem[]) => {
     try {

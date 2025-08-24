@@ -12,31 +12,11 @@ import { SDKError } from '../../types/miniapp-sdk';
 import { logger } from '../../lib/logger';
 
 /**
- * Demo section configuration
- */
-interface DemoSection {
-  id: string;
-  title: string;
-  description: string;
-  component: React.ComponentType<{ onError?: (error: SDKError) => void }>;
-  category: 'core' | 'features' | 'optimization' | 'analytics';
-  priority: 'high' | 'medium' | 'low';
-}
-
-// Simplified to use the comprehensive SDK integration component
-const showAdvancedFeatures = true;
-const enablePerformanceMonitoring = true;
-const autoOptimize = true;
-
-/**
  * Enhanced MiniApp SDK Demo Page
  */
 export default function SDKDemoPage() {
   // Component state
-  const [activeSection, setActiveSection] = useState<string>('wallet');
   const [errors, setErrors] = useState<SDKError[]>([]);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [showSidebar, setShowSidebar] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
   // Handle errors from components
@@ -50,14 +30,7 @@ export default function SDKDemoPage() {
     setErrors([]);
   };
 
-  // Simplified category counts since we're using integrated component
-  const categoryCounts = {
-    all: 15,
-    core: 3,
-    features: 4,
-    optimization: 2,
-    analytics: 1
-  };
+
 
   return (
     <EnhancedMiniKitProvider>
@@ -67,14 +40,7 @@ export default function SDKDemoPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center">
-                <button
-                  onClick={() => setShowSidebar(!showSidebar)}
-                  className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 lg:hidden"
-                >
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
+
                 <div className="ml-4 lg:ml-0">
                   <h1 className="text-xl font-semibold text-gray-900">
                     Enhanced MiniApp SDK Demo
@@ -145,9 +111,9 @@ export default function SDKDemoPage() {
 
           {/* Main SDK Integration Component */}
           <SDKIntegration 
-            showAdvanced={showAdvancedFeatures}
-            enablePerformanceMonitoring={enablePerformanceMonitoring}
-            autoOptimize={autoOptimize}
+            showAdvanced={true}
+            enablePerformanceMonitoring={true}
+            autoOptimize={true}
             onError={handleError}
           />
         </div>

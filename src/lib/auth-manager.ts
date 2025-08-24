@@ -137,7 +137,7 @@ export class AuthenticationManager {
     logger.debug('Auth state updated', {
       previous: previousState.status,
       current: this.state.status,
-      address: this.state.address,
+      address: this.state.address ?? undefined,
       attempts: this.state.attempts
     });
 
@@ -308,7 +308,7 @@ export class AuthenticationManager {
 
     // Check if already authenticated
     if (this.state.status === 'authenticated') {
-      logger.info('Already authenticated', { address: this.state.address });
+      logger.info('Already authenticated', { address: this.state.address ?? undefined });
       return;
     }
 

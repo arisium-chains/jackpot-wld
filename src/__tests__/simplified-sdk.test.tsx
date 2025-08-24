@@ -115,9 +115,8 @@ Object.defineProperty(navigator, "clipboard", {
 });
 
 // Mock the hooks directly for better test control
-jest.mock("../providers/miniapp-provider", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const originalModule = jest.requireActual("../providers/miniapp-provider") as any;
+jest.mock("../providers/miniapp-provider", async () => {
+  const originalModule = await jest.importActual("../providers/miniapp-provider") as Record<string, unknown>;
   return {
     ...originalModule,
     useWallet: jest.fn(),
@@ -147,10 +146,8 @@ describe("Simplified MiniApp SDK", () => {
         Promise.resolve({ nonce: "mock-nonce", ok: true, success: true }),
     });
 
-    const { useWallet, useWorldID, usePayment, useLottery, useMiniApp } = jest.requireMock(
-      "../providers/miniapp-provider"
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) as any;
+    const mockProvider = jest.mocked(await import("../providers/miniapp-provider"));
+    const { useWallet, useWorldID, usePayment, useLottery, useMiniApp } = mockProvider;
 
     useWallet.mockReturnValue({
       isConnected: true,

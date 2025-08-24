@@ -50,42 +50,6 @@ export function EnhancedWalletConnect({
   const [retryCount, setRetryCount] = useState(0);
   const [lastConnectAttempt, setLastConnectAttempt] = useState<Date | null>(null);
 
-  // Auto-connect effect
-  useEffect(() => {
-  if (autoConnect && isReady && !wallet.state.isConnected && !isConnecting && retryCount < 3) {
-    const timeSinceLastAttempt = lastConnectAttempt ? Date.now() - lastConnectAttempt.getTime() : Infinity;
-    if (timeSinceLastAttempt > 5000) { // Wait 5 seconds between auto-connect attempts
-      handleConnect();
-    }
-  }
-}, [autoConnect, isReady, wallet.state.isConnected, isConnecting, retryCount, lastConnectAttempt, handleConnect]);
-
-  // Load balance when connected
-  useEffect(() => {
-  if (wallet.state.isConnected && showBalance) {
-    loadBalance();
-  }
-}, [wallet.state.isConnected, showBalance, loadBalance]);
-
-  // Handle errors
-  useEffect(() => {
-    if (hasError && error) {
-      setConnectionError(error.message);
-      onError?.(error);
-    }
-  }, [hasError, error, onError]);
-
-  // Load wallet balance
-  const loadBalance = useCallback(async () => {
-    try {
-      const walletBalance = await wallet.getBalance();
-      setBalance(walletBalance);
-    } catch (error) {
-      logger.error('Failed to load wallet balance', { error: String(error) });
-      setBalance('Error');
-    }
-  }, [wallet]);
-
   // Handle wallet connection
   const handleConnect = useCallback(async () => {
     if (!isReady || isConnecting) return;
@@ -119,7 +83,6 @@ export function EnhancedWalletConnect({
         uri: window.location.origin,
         version: '1',
         chainId: 4801, // World Chain Sepolia
-        expirationTime: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
         ...customAuthOptions
       };
 
@@ -127,26 +90,26 @@ export function EnhancedWalletConnect({
       const result = await wallet.connect(authOptions);
       
       if (result.status === 'success' && result.address) {
+        setBalance('Loading...');
+        setRetryCount(0);
+        
         // Track successful connection
         await analytics.track({
           name: 'wallet_connected',
           properties: {
             address: result.address,
             is_world_app: wallet.isWorldApp,
-            connection_method: 'enhanced_sdk'
+            chain_id: authOptions.chainId
           }
         });
-
-        // Reset retry count on success
-        setRetryCount(0);
         
-        // Call success callback
         onConnect?.(result.address);
-        
-        logger.info('Enhanced wallet connected successfully', { address: result.address });
+        logger.info('Enhanced wallet connected', { address: result.address });
+      } else {
+        throw new Error(result.error_code || 'Connection failed');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Connection failed';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setConnectionError(errorMessage);
       setRetryCount(prev => prev + 1);
       
@@ -165,6 +128,42 @@ export function EnhancedWalletConnect({
       setIsConnecting(false);
     }
   }, [isReady, isConnecting, wallet, analytics, retryCount, customAuthOptions, onConnect]);
+
+  // Auto-connect effect
+  useEffect(() => {
+  if (autoConnect && isReady && !wallet.state.isConnected && !isConnecting && retryCount < 3) {
+    const timeSinceLastAttempt = lastConnectAttempt ? Date.now() - lastConnectAttempt.getTime() : Infinity;
+    if (timeSinceLastAttempt > 5000) { // Wait 5 seconds between auto-connect attempts
+      handleConnect();
+    }
+  }
+}, [autoConnect, isReady, wallet.state.isConnected, isConnecting, retryCount, lastConnectAttempt, handleConnect]);
+
+  // Load wallet balance
+  const loadBalance = useCallback(async () => {
+    try {
+      const walletBalance = await wallet.getBalance();
+      setBalance(walletBalance);
+    } catch (error) {
+      logger.error('Failed to load wallet balance', { error: String(error) });
+      setBalance('Error');
+    }
+  }, [wallet]);
+
+  // Load balance when connected
+  useEffect(() => {
+  if (wallet.state.isConnected && showBalance) {
+    loadBalance();
+  }
+}, [wallet.state.isConnected, showBalance, loadBalance]);
+
+  // Handle errors
+  useEffect(() => {
+    if (hasError && error) {
+      setConnectionError(error.message);
+      onError?.(error);
+    }
+  }, [hasError, error, onError]);
 
   // Handle wallet disconnection
   const handleDisconnect = useCallback(async () => {

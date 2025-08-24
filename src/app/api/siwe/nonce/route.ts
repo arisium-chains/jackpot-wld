@@ -12,10 +12,7 @@ interface NonceResponse {
   requestId: string;
 }
 
-interface NonceRequest {
-  requestId?: string;
-  domain?: string;
-}
+
 
 // Rate limiting for nonce generation
 const nonceRateLimitStore = new Map<string, { attempts: number; resetAt: number }>();

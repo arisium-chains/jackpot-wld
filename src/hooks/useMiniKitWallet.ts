@@ -96,7 +96,7 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
       address: authState.address as `0x${string}` | undefined,
       sessionId: authState.sessionId || undefined,
       error: authState.error?.message,
-      enhancedError: authState.error || undefined,
+      enhancedError: authState.error ? errorHandler.createError(authState.error.message, 'wallet_auth', authState.error.details) : undefined,
       canRetry: authState.error?.retryable ?? true,
       retryCount: authState.attempts
     };
@@ -109,12 +109,14 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
 
   // Set up authentication manager event listeners
   useEffect(() => {
-    const handleStateChange = (data: { current: AuthState }) => {
+    const handleStateChange = (...args: unknown[]) => {
+      const data = args[0] as { current: AuthState };
       const convertedState = convertAuthState(data.current);
       setState(prev => ({ ...prev, ...convertedState }));
     };
 
-    const handleError = (error: AuthError) => {
+    const handleError = (...args: unknown[]) => {
+      const error = args[0] as AuthError;
       logger.walletAuth('error', { 
         code: error.code, 
         message: error.message,
@@ -126,11 +128,13 @@ export function useMiniKitWallet(): UseMiniKitWalletReturn {
       logger.walletAuth('connecting', {});
     };
 
-    const handleAuthenticating = (data: { step: string }) => {
+    const handleAuthenticating = (...args: unknown[]) => {
+      const data = args[0] as { step: string };
       logger.walletAuth('authenticating', { step: data.step });
     };
 
-    const handleAuthenticated = (data: { address: string; sessionId?: string }) => {
+    const handleAuthenticated = (...args: unknown[]) => {
+      const data = args[0] as { address: string; sessionId?: string };
       logger.walletAuth('authenticated', { 
         address: data.address, 
         sessionId: data.sessionId 

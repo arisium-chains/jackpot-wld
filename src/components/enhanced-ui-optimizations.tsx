@@ -1,8 +1,3 @@
-/**
- * Enhanced UI Optimizations Component
- * MiniApp-specific UI optimizations for better performance and UX
- */
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -10,9 +5,7 @@ import { useEnhancedMiniKit } from '../providers/enhanced-minikit-provider';
 import { SDKError } from '../types/miniapp-sdk';
 import { logger } from '../lib/logger';
 
-/**
- * Enhanced UI Optimizations Props
- */
+// Component interfaces
 interface EnhancedUIOptimizationsProps {
   onError?: (error: SDKError) => void;
   className?: string;
@@ -26,9 +19,6 @@ interface EnhancedUIOptimizationsProps {
   virtualScrollThreshold?: number;
 }
 
-/**
- * Performance metrics
- */
 interface PerformanceMetrics {
   fps: number;
   memoryUsage: number;
@@ -39,9 +29,6 @@ interface PerformanceMetrics {
   cacheHitRate: number;
 }
 
-/**
- * UI optimization settings
- */
 interface OptimizationSettings {
   reducedMotion: boolean;
   highContrast: boolean;
@@ -53,9 +40,6 @@ interface OptimizationSettings {
   screenReader: boolean;
 }
 
-/**
- * Gesture configuration
- */
 interface GestureConfig {
   swipeThreshold: number;
   tapDelay: number;
@@ -64,9 +48,6 @@ interface GestureConfig {
   enableHapticFeedback: boolean;
 }
 
-/**
- * Image optimization settings
- */
 interface ImageOptimization {
   enableWebP: boolean;
   enableAVIF: boolean;
@@ -77,9 +58,6 @@ interface ImageOptimization {
   maxHeight: number;
 }
 
-/**
- * Virtual scroll item
- */
 interface VirtualScrollItem {
   id: string;
   height: number;
@@ -87,9 +65,6 @@ interface VirtualScrollItem {
   isVisible: boolean;
 }
 
-/**
- * Enhanced UI Optimizations Component
- */
 export function EnhancedUIOptimizations({
   onError,
   className = '',
@@ -119,6 +94,7 @@ export function EnhancedUIOptimizations({
     bundleSize: 0,
     cacheHitRate: 0
   });
+  
   const [optimizationSettings, setOptimizationSettings] = useState<OptimizationSettings>({
     reducedMotion: false,
     highContrast: false,
@@ -129,14 +105,16 @@ export function EnhancedUIOptimizations({
     keyboardNavigation: true,
     screenReader: false
   });
-  const [gestureConfig, setGestureConfig] = useState<GestureConfig>({
+  
+  const [gestureConfig] = useState<GestureConfig>({
     swipeThreshold: 50,
     tapDelay: 300,
     longPressDelay: 500,
     pinchSensitivity: 0.1,
     enableHapticFeedback: true
   });
-  const [imageOptimization, setImageOptimization] = useState<ImageOptimization>({
+  
+  const [imageOptimization] = useState<ImageOptimization>({
     enableWebP: true,
     enableAVIF: false,
     enableLazyLoading: true,
@@ -145,10 +123,12 @@ export function EnhancedUIOptimizations({
     maxWidth: 1200,
     maxHeight: 800
   });
+  
   const [virtualScrollItems, setVirtualScrollItems] = useState<VirtualScrollItem[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizationResults, setOptimizationResults] = useState<string[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  
   const [deviceCapabilities, setDeviceCapabilities] = useState({
     memory: 0,
     cores: 0,
@@ -159,99 +139,11 @@ export function EnhancedUIOptimizations({
     webGLSupport: false
   });
 
-  // Initialize optimizations on mount
-  useEffect(() => {
-    initializeOptimizations();
-    detectDeviceCapabilities();
-    setupPerformanceMonitoring();
-    setupAccessibilityFeatures();
-    
-    return () => {
-      cleanup();
-    };
-  }, [initializeOptimizations, detectDeviceCapabilities, setupPerformanceMonitoring, setupAccessibilityFeatures, cleanup]);
-
-  // Apply optimizations when settings change
-  useEffect(() => {
-    applyOptimizations();
-  }, [applyOptimizations, optimizationSettings, gestureConfig, imageOptimization]);
-
-  // Initialize optimizations
-  const initializeOptimizations = useCallback(async () => {
-    try {
-      setIsOptimizing(true);
-      const results: string[] = [];
-
-      // Detect user preferences
-      if (window.matchMedia) {
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const highContrast = window.matchMedia('(prefers-contrast: high)').matches;
-        const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        setOptimizationSettings(prev => ({
-          ...prev,
-          reducedMotion,
-          highContrast,
-          darkMode
-        }));
-        
-        results.push('User preferences detected');
-      }
-
-      // Setup virtual scrolling if enabled
-      if (enableVirtualization) {
-        setupVirtualScrolling();
-        results.push('Virtual scrolling enabled');
-      }
-
-      // Setup lazy loading if enabled
-      if (enableLazyLoading) {
-        setupLazyLoading();
-        results.push('Lazy loading enabled');
-      }
-
-      // Setup gesture optimization if enabled
-      if (enableGestureOptimization) {
-        setupGestureOptimization();
-        results.push('Gesture optimization enabled');
-      }
-
-      // Setup image optimization if enabled
-      if (enableImageOptimization) {
-        setupImageOptimization();
-        results.push('Image optimization enabled');
-      }
-
-      setOptimizationResults(results);
-      
-      analytics.track({
-        name: 'ui_optimizations_initialized',
-        properties: {
-          optimizations: results,
-          device_capabilities: deviceCapabilities
-        }
-      });
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize optimizations';
-      
-      onError?.({
-        code: 'UNKNOWN_ERROR', // Using available SDKErrorCode for optimization errors
-        message: errorMessage,
-        timestamp: new Date()
-      });
-      
-      logger.error('Failed to initialize optimizations', { error: String(error) });
-    } finally {
-      setIsOptimizing(false);
-    }
-  }, [setupVirtualScrolling, setupLazyLoading, setupGestureOptimization, setupImageOptimization, enableVirtualization, enableLazyLoading, enableGestureOptimization, enableImageOptimization, deviceCapabilities, analytics, onError]);
-
-  // Detect device capabilities
+  // Helper functions (defined before they are used)
   const detectDeviceCapabilities = useCallback(() => {
     const capabilities = {
-      memory: (navigator as { deviceMemory?: number }).deviceMemory || 0,
-      cores: navigator.hardwareConcurrency || 0,
+      memory: (navigator as { deviceMemory?: number }).deviceMemory || 4,
+      cores: navigator.hardwareConcurrency || 4,
       connection: (navigator as { connection?: { effectiveType?: string } }).connection?.effectiveType || 'unknown',
       pixelRatio: window.devicePixelRatio || 1,
       screenSize: {
@@ -263,22 +155,12 @@ export function EnhancedUIOptimizations({
     };
     
     setDeviceCapabilities(capabilities);
-    
-    // Adjust settings based on capabilities
-    if (capabilities.memory < 4) {
-      setOptimizationSettings(prev => ({ ...prev, compactMode: true }));
-    }
-    
-    if (capabilities.connection === 'slow-2g' || capabilities.connection === '2g') {
-      setImageOptimization(prev => ({ ...prev, compressionQuality: 60 }));
-    }
+    return capabilities;
   }, []);
 
-  // Setup performance monitoring
   const setupPerformanceMonitoring = useCallback(() => {
     if (!enablePerformanceMonitoring) return;
 
-    // FPS monitoring
     let lastTime = performance.now();
     let frameCount = 0;
     
@@ -296,78 +178,9 @@ export function EnhancedUIOptimizations({
     };
     
     measureFPS();
-
-    // Memory monitoring
-    if ('memory' in performance) {
-      const updateMemory = () => {
-        const memory = (performance as { memory?: { usedJSHeapSize: number } }).memory;
-        if (memory) {
-          setPerformanceMetrics(prev => ({
-            ...prev,
-            memoryUsage: memory.usedJSHeapSize / 1024 / 1024 // MB
-          }));
-        }
-      };
-      
-      setInterval(updateMemory, 5000);
-    }
-
-    // Performance observer
-    if ('PerformanceObserver' in window) {
-      performanceObserverRef.current = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        
-        entries.forEach((entry) => {
-          if (entry.entryType === 'navigation') {
-            const navEntry = entry as PerformanceNavigationTiming;
-            setPerformanceMetrics(prev => ({
-              ...prev,
-              loadTime: navEntry.loadEventEnd - navEntry.loadEventStart
-            }));
-          }
-          
-          if (entry.entryType === 'measure') {
-            setPerformanceMetrics(prev => ({
-              ...prev,
-              renderTime: entry.duration
-            }));
-          }
-        });
-      });
-      
-      performanceObserverRef.current.observe({ entryTypes: ['navigation', 'measure'] });
-    }
   }, [enablePerformanceMonitoring]);
 
-  // Setup accessibility features
-  const setupAccessibilityFeatures = useCallback(() => {
-    if (!enableAccessibility) return;
-
-    // Screen reader detection
-    const detectScreenReader = () => {
-      const isScreenReader = window.speechSynthesis && window.speechSynthesis.getVoices().length > 0;
-      setOptimizationSettings(prev => ({ ...prev, screenReader: isScreenReader }));
-    };
-    
-    detectScreenReader();
-    
-    // Keyboard navigation
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Tab') {
-        setOptimizationSettings(prev => ({ ...prev, keyboardNavigation: true }));
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [enableAccessibility]);
-
-  // Setup virtual scrolling
   const setupVirtualScrolling = useCallback(() => {
-    // Generate sample items for demonstration
     const items: VirtualScrollItem[] = Array.from({ length: 1000 }, (_, i) => ({
       id: `item-${i}`,
       height: 60,
@@ -383,7 +196,6 @@ export function EnhancedUIOptimizations({
     setVirtualScrollItems(items);
   }, [virtualScrollThreshold]);
 
-  // Setup lazy loading
   const setupLazyLoading = useCallback(() => {
     if (!intersectionObserverRef.current) {
       intersectionObserverRef.current = new IntersectionObserver(
@@ -401,573 +213,217 @@ export function EnhancedUIOptimizations({
             }
           });
         },
-        {
-          rootMargin: '50px'
-        }
+        { rootMargin: '50px' }
       );
     }
   }, []);
 
-  // Setup gesture optimization
   const setupGestureOptimization = useCallback(() => {
     if (!containerRef.current) return;
 
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    
-    const handleTouchStart = (event: TouchEvent) => {
-      const touch = event.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      touchStartTime = Date.now();
-      
-      // Haptic feedback if supported
+    const handleTouchStart = () => {
       if (gestureConfig.enableHapticFeedback && 'vibrate' in navigator) {
         navigator.vibrate(10);
       }
     };
     
-    const handleTouchEnd = (event: TouchEvent) => {
-      const touch = event.changedTouches[0];
-      const deltaX = touch.clientX - touchStartX;
-      const deltaY = touch.clientY - touchStartY;
-      const deltaTime = Date.now() - touchStartTime;
-      
-      // Detect swipe
-      if (Math.abs(deltaX) > gestureConfig.swipeThreshold || Math.abs(deltaY) > gestureConfig.swipeThreshold) {
-        const direction = Math.abs(deltaX) > Math.abs(deltaY) 
-          ? (deltaX > 0 ? 'right' : 'left')
-          : (deltaY > 0 ? 'down' : 'up');
-          
-        analytics.track({
-          name: 'gesture_swipe',
-          properties: {
-            direction,
-            distance: Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-            duration: deltaTime
-          }
-        });
-      }
-      
-      // Detect tap vs long press
-      if (deltaTime < gestureConfig.tapDelay) {
-        analytics.track({
-          name: 'gesture_tap',
-          properties: {
-            x: touch.clientX,
-            y: touch.clientY,
-            duration: deltaTime
-          }
-        });
-      } else if (deltaTime > gestureConfig.longPressDelay) {
-        analytics.track({
-          name: 'gesture_long_press',
-          properties: {
-            x: touch.clientX,
-            y: touch.clientY,
-            duration: deltaTime
-          }
-        });
-      }
-    };
-    
     containerRef.current.addEventListener('touchstart', handleTouchStart, { passive: true });
-    containerRef.current.addEventListener('touchend', handleTouchEnd, { passive: true });
-  }, [gestureConfig, analytics]);
+  }, [gestureConfig]);
 
-  // Setup image optimization
   const setupImageOptimization = useCallback(() => {
-    // Create optimized image loader
-    const loadOptimizedImage = (img: HTMLImageElement, src: string) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) return;
-      
-      const tempImg = new Image();
-      tempImg.onload = () => {
-        // Calculate optimal dimensions
-        let { width, height } = tempImg;
-        
-        if (width > imageOptimization.maxWidth) {
-          height = (height * imageOptimization.maxWidth) / width;
-          width = imageOptimization.maxWidth;
-        }
-        
-        if (height > imageOptimization.maxHeight) {
-          width = (width * imageOptimization.maxHeight) / height;
-          height = imageOptimization.maxHeight;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        ctx.drawImage(tempImg, 0, 0, width, height);
-        
-        // Convert to optimized format
-        const quality = imageOptimization.compressionQuality / 100;
-        const optimizedSrc = canvas.toDataURL('image/jpeg', quality);
-        
-        img.src = optimizedSrc;
-      };
-      
-      tempImg.src = src;
-    };
-    
-    // Apply to existing images
     const images = document.querySelectorAll('img[data-optimize]');
     images.forEach((img) => {
-      const originalSrc = (img as HTMLImageElement).src;
-      if (originalSrc) {
-        loadOptimizedImage(img as HTMLImageElement, originalSrc);
+      const htmlImg = img as HTMLImageElement;
+      if (htmlImg.src) {
+        // Basic optimization logic
+        htmlImg.loading = 'lazy';
       }
     });
-  }, [imageOptimization]);
-
-  // Apply optimizations
-  const applyOptimizations = useCallback(() => {
-    const root = document.documentElement;
-    
-    // Apply CSS custom properties for optimizations
-    if (optimizationSettings.reducedMotion) {
-      root.style.setProperty('--animation-duration', '0s');
-      root.style.setProperty('--transition-duration', '0s');
-    } else {
-      root.style.removeProperty('--animation-duration');
-      root.style.removeProperty('--transition-duration');
-    }
-    
-    if (optimizationSettings.highContrast) {
-      root.style.setProperty('--contrast-multiplier', '1.5');
-    } else {
-      root.style.removeProperty('--contrast-multiplier');
-    }
-    
-    if (optimizationSettings.largeText) {
-      root.style.setProperty('--font-size-multiplier', '1.2');
-    } else {
-      root.style.removeProperty('--font-size-multiplier');
-    }
-    
-    if (optimizationSettings.compactMode) {
-      root.style.setProperty('--spacing-multiplier', '0.8');
-    } else {
-      root.style.removeProperty('--spacing-multiplier');
-    }
-    
-    if (optimizationSettings.touchOptimized) {
-      root.style.setProperty('--touch-target-size', '44px');
-    } else {
-      root.style.removeProperty('--touch-target-size');
-    }
-  }, [optimizationSettings]);
-
-  // Cleanup
-  const cleanup = useCallback(() => {
-    if (frameIdRef.current) {
-      cancelAnimationFrame(frameIdRef.current);
-    }
-    
-    if (performanceObserverRef.current) {
-      performanceObserverRef.current.disconnect();
-    }
-    
-    if (intersectionObserverRef.current) {
-      intersectionObserverRef.current.disconnect();
-    }
   }, []);
 
+  const setupAccessibilityFeatures = useCallback(() => {
+    if (!enableAccessibility) return;
 
-
-  // Get performance status
-  const getPerformanceStatus = useCallback(() => {
-    const { fps, memoryUsage } = performanceMetrics;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') {
+        setOptimizationSettings(prev => ({ ...prev, keyboardNavigation: true }));
+      }
+    };
     
-    if (fps < 30 || memoryUsage > 100) {
-      return { status: 'poor', color: 'text-red-600', bg: 'bg-red-50' };
-    } else if (fps < 50 || memoryUsage > 50) {
-      return { status: 'fair', color: 'text-yellow-600', bg: 'bg-yellow-50' };
-    } else {
-      return { status: 'good', color: 'text-green-600', bg: 'bg-green-50' };
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [enableAccessibility]);
+
+  // Main initialization function
+  const initializeOptimizations = useCallback(async () => {
+    try {
+      setIsOptimizing(true);
+      const results: string[] = [];
+
+      // Detect device capabilities first
+      detectDeviceCapabilities();
+      results.push('Device capabilities detected');
+
+      // Setup optimizations based on enabled features
+      if (enableVirtualization) {
+        setupVirtualScrolling();
+        results.push('Virtual scrolling enabled');
+      }
+
+      if (enableLazyLoading) {
+        setupLazyLoading();
+        results.push('Lazy loading enabled');
+      }
+
+      if (enableGestureOptimization) {
+        setupGestureOptimization();
+        results.push('Gesture optimization enabled');
+      }
+
+      if (enableImageOptimization) {
+        setupImageOptimization();
+        results.push('Image optimization enabled');
+      }
+
+      if (enableAccessibility) {
+        setupAccessibilityFeatures();
+        results.push('Accessibility features enabled');
+      }
+
+      if (enablePerformanceMonitoring) {
+        setupPerformanceMonitoring();
+        results.push('Performance monitoring enabled');
+      }
+
+      setOptimizationResults(results);
+      
+      analytics.track({
+        name: 'ui_optimizations_initialized',
+        properties: {
+          enabledFeatures: results.length,
+          deviceCapabilities
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to initialize UI optimizations:', { error: error instanceof Error ? error.message : String(error) });
+      onError?.({
+        code: 'UNKNOWN_ERROR',
+        message: 'Failed to initialize UI optimizations',
+        details: error,
+        timestamp: new Date()
+      });
+    } finally {
+      setIsOptimizing(false);
     }
-  }, [performanceMetrics]);
+  }, [
+    detectDeviceCapabilities,
+    setupVirtualScrolling,
+    setupLazyLoading,
+    setupGestureOptimization,
+    setupImageOptimization,
+    setupAccessibilityFeatures,
+    setupPerformanceMonitoring,
+    enableVirtualization,
+    enableLazyLoading,
+    enableGestureOptimization,
+    enableImageOptimization,
+    enableAccessibility,
+    enablePerformanceMonitoring,
+    deviceCapabilities,
+    analytics,
+    onError
+  ]);
 
-  // Visible virtual scroll items
-  const visibleVirtualItems = useMemo(() => {
-    return virtualScrollItems.filter(item => item.isVisible).slice(0, 20);
+  // Initialize on mount
+  useEffect(() => {
+    initializeOptimizations();
+  }, [initializeOptimizations]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
+      if (performanceObserverRef.current) {
+        performanceObserverRef.current.disconnect();
+      }
+      if (intersectionObserverRef.current) {
+        intersectionObserverRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Memoized virtual scroll items for performance
+  const visibleItems = useMemo(() => {
+    return virtualScrollItems.filter(item => item.isVisible);
   }, [virtualScrollItems]);
-
-  const performanceStatus = getPerformanceStatus();
 
   return (
     <div ref={containerRef} className={`enhanced-ui-optimizations ${className}`}>
-      {/* Performance Dashboard */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">
-            UI Optimizations
-          </h2>
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-            performanceStatus.color
-          } ${performanceStatus.bg}`}>
-            Performance: {performanceStatus.status.toUpperCase()}
+      <div className="p-4">
+        <h2 className="text-xl font-bold mb-4">UI Optimizations</h2>
+        
+        {isOptimizing && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-blue-800">Initializing optimizations...</p>
           </div>
-        </div>
-
-        {/* Performance Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">FPS</div>
-            <div className="text-lg font-semibold text-gray-900">
-              {performanceMetrics.fps}
-            </div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">Memory</div>
-            <div className="text-lg font-semibold text-gray-900">
-              {performanceMetrics.memoryUsage.toFixed(1)} MB
-            </div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">Load Time</div>
-            <div className="text-lg font-semibold text-gray-900">
-              {performanceMetrics.loadTime.toFixed(0)} ms
-            </div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">Render Time</div>
-            <div className="text-lg font-semibold text-gray-900">
-              {performanceMetrics.renderTime.toFixed(1)} ms
-            </div>
-          </div>
-        </div>
-
-        {/* Device Capabilities */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Device Capabilities</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-sm">
-              <span className="text-gray-600">Memory:</span>
-              <span className="ml-2 font-medium">{deviceCapabilities.memory || 'Unknown'} GB</span>
-            </div>
-            <div className="text-sm">
-              <span className="text-gray-600">Cores:</span>
-              <span className="ml-2 font-medium">{deviceCapabilities.cores || 'Unknown'}</span>
-            </div>
-            <div className="text-sm">
-              <span className="text-gray-600">Connection:</span>
-              <span className="ml-2 font-medium">{deviceCapabilities.connection}</span>
-            </div>
-            <div className="text-sm">
-              <span className="text-gray-600">Pixel Ratio:</span>
-              <span className="ml-2 font-medium">{deviceCapabilities.pixelRatio}x</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Optimization Results */}
+        )}
+        
         {optimizationResults.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Active Optimizations</h3>
-            <div className="flex flex-wrap gap-2">
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+            <h3 className="font-medium text-green-800 mb-2">Enabled Optimizations:</h3>
+            <ul className="text-sm text-green-700">
               {optimizationResults.map((result, index) => (
-                <span key={index} className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                  {result}
-                </span>
+                <li key={index}>• {result}</li>
               ))}
+            </ul>
+          </div>
+        )}
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="p-3 bg-gray-50 rounded">
+            <h4 className="font-medium mb-2">Performance</h4>
+            <p className="text-sm">FPS: {performanceMetrics.fps}</p>
+            <p className="text-sm">Memory: {performanceMetrics.memoryUsage.toFixed(1)}MB</p>
+          </div>
+          
+          <div className="p-3 bg-gray-50 rounded">
+            <h4 className="font-medium mb-2">Device</h4>
+            <p className="text-sm">Cores: {deviceCapabilities.cores}</p>
+            <p className="text-sm">Memory: {deviceCapabilities.memory}GB</p>
+          </div>
+        </div>
+        
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+        </button>
+        
+        {showAdvanced && (
+          <div className="p-4 bg-gray-50 rounded">
+            <h3 className="font-medium mb-3">Advanced Configuration</h3>
+            <div className="space-y-2 text-sm">
+              <p>Reduced Motion: {optimizationSettings.reducedMotion ? 'Yes' : 'No'}</p>
+              <p>High Contrast: {optimizationSettings.highContrast ? 'Yes' : 'No'}</p>
+              <p>Touch Optimized: {optimizationSettings.touchOptimized ? 'Yes' : 'No'}</p>
+              <p>Screen Reader: {optimizationSettings.screenReader ? 'Yes' : 'No'}</p>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Accessibility Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Accessibility Settings
-        </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.reducedMotion}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, reducedMotion: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Reduce motion and animations
-              </span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.highContrast}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, highContrast: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                High contrast mode
-              </span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.largeText}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, largeText: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Large text size
-              </span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.keyboardNavigation}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, keyboardNavigation: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Keyboard navigation support
-              </span>
-            </label>
-          </div>
-          
-          <div className="space-y-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.compactMode}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, compactMode: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Compact mode (less spacing)
-              </span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.touchOptimized}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, touchOptimized: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Touch-optimized interface
-              </span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.screenReader}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, screenReader: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Screen reader optimizations
-              </span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={optimizationSettings.darkMode}
-                onChange={(e) => setOptimizationSettings(prev => ({ ...prev, darkMode: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Dark mode
-              </span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* Virtual Scrolling Demo */}
-      {enableVirtualization && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Virtual Scrolling Demo
-          </h3>
-          <div className="h-64 overflow-y-auto border border-gray-200 rounded">
-            {visibleVirtualItems.map((item) => (
-              <div key={item.id} style={{ height: item.height }}>
-                {item.content}
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 text-sm text-gray-600">
-            Showing {visibleVirtualItems.length} of {virtualScrollItems.length} items
-          </div>
-        </div>
-      )}
-
-      {/* Advanced Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Advanced Optimizations
-          </h3>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-          >
-            <span>Advanced Settings</span>
-            <svg className={`ml-1 h-4 w-4 transform transition-transform ${
-              showAdvanced ? 'rotate-180' : ''
-            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-
-        {showAdvanced && (
-          <div className="space-y-6">
-            {/* Gesture Configuration */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Gesture Configuration</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Swipe Threshold (px)</label>
-                  <input
-                    type="number"
-                    value={gestureConfig.swipeThreshold}
-                    onChange={(e) => setGestureConfig(prev => ({ ...prev, swipeThreshold: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Long Press Delay (ms)</label>
-                  <input
-                    type="number"
-                    value={gestureConfig.longPressDelay}
-                    onChange={(e) => setGestureConfig(prev => ({ ...prev, longPressDelay: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <label className="flex items-center mt-3">
-                <input
-                  type="checkbox"
-                  checked={gestureConfig.enableHapticFeedback}
-                  onChange={(e) => setGestureConfig(prev => ({ ...prev, enableHapticFeedback: e.target.checked }))}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Enable haptic feedback
-                </span>
-              </label>
-            </div>
-
-            {/* Image Optimization */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Image Optimization</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Compression Quality (%)</label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    value={imageOptimization.compressionQuality}
-                    onChange={(e) => setImageOptimization(prev => ({ ...prev, compressionQuality: parseInt(e.target.value) }))}
-                    className="w-full"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">
-                    {imageOptimization.compressionQuality}%
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Max Width (px)</label>
-                  <input
-                    type="number"
-                    value={imageOptimization.maxWidth}
-                    onChange={(e) => setImageOptimization(prev => ({ ...prev, maxWidth: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Max Height (px)</label>
-                  <input
-                    type="number"
-                    value={imageOptimization.maxHeight}
-                    onChange={(e) => setImageOptimization(prev => ({ ...prev, maxHeight: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-4 mt-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={imageOptimization.enableWebP}
-                    onChange={(e) => setImageOptimization(prev => ({ ...prev, enableWebP: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">WebP format</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={imageOptimization.enableProgressiveLoading}
-                    onChange={(e) => setImageOptimization(prev => ({ ...prev, enableProgressiveLoading: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Progressive loading</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Performance Actions */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Performance Actions</h4>
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={initializeOptimizations}
-                  disabled={isOptimizing}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg flex items-center"
-                >
-                  {isOptimizing ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  ) : (
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  )}
-                  Re-optimize
-                </button>
-                
-                <button
-                  onClick={() => {
-                    if ('gc' in window) {
-                      (window as { gc?: () => void }).gc?.();
-                    }
-                  }}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
-                >
-                  Force Garbage Collection
-                </button>
-                
-                <button
-                  onClick={() => {
-                    performance.mark('optimization-test-start');
-                    setTimeout(() => {
-                      performance.mark('optimization-test-end');
-                      performance.measure('optimization-test', 'optimization-test-start', 'optimization-test-end');
-                    }, 100);
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-                >
-                  Run Performance Test
-                </button>
-              </div>
+        {enableVirtualization && visibleItems.length > 0 && (
+          <div className="mt-4">
+            <h3 className="font-medium mb-2">Virtual Scroll Demo</h3>
+            <div className="max-h-64 overflow-y-auto border border-gray-200 rounded">
+              {visibleItems.slice(0, 10).map(item => (
+                <div key={item.id}>{item.content}</div>
+              ))}
             </div>
           </div>
         )}

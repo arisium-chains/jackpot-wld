@@ -75,25 +75,6 @@ export function EnhancedWorldID({
   const [requireUniqueHumanState, setRequireUniqueHuman] = useState(requireUniqueHuman);
 
   // Load verification history
-  useEffect(() => {
-    if (showVerificationHistory) {
-      loadVerificationHistory();
-    }
-  }, [showVerificationHistory, loadVerificationHistory]);
-
-  // Auto-verify if enabled
-  useEffect(() => {
-    if (autoVerify && verificationStatus === 'idle' && !isProcessing) {
-      handleVerification();
-    }
-  }, [autoVerify, verificationStatus, isProcessing, handleVerification]);
-
-  // Update verification status callback
-  useEffect(() => {
-    onVerificationUpdate?.(verificationStatus);
-  }, [verificationStatus, onVerificationUpdate]);
-
-  // Load verification history
   const loadVerificationHistory = useCallback(async () => {
     try {
       // This would typically load from local storage or API
@@ -119,21 +100,31 @@ export function EnhancedWorldID({
 
   // Save verification to history
   const saveVerificationToHistory = useCallback((item: Omit<VerificationHistoryItem, 'id'>) => {
-    const historyItem: VerificationHistoryItem = {
+    const newItem: VerificationHistoryItem = {
       ...item,
       id: `verification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     };
+    
+    setVerificationHistory(prev => {
+      const updated = [newItem, ...prev].slice(0, 10); // Keep only last 10 items
+      
+      // Store in localStorage
+      try {
+        localStorage.setItem('worldid-verification-history', JSON.stringify(updated));
+      } catch (error) {
+        logger.warn('Failed to save verification history to localStorage:', { error: String(error) });
+      }
+      
+      return updated;
+    });
+  }, []);
 
-    const updatedHistory = [historyItem, ...verificationHistory].slice(0, 10); // Keep last 10
-    setVerificationHistory(updatedHistory);
-
-    // Save to localStorage
-    try {
-      localStorage.setItem('worldid-verification-history', JSON.stringify(updatedHistory));
-    } catch (error) {
-      logger.error('Failed to save verification history', { error: String(error) });
+  // Load verification history
+  useEffect(() => {
+    if (showVerificationHistory) {
+      loadVerificationHistory();
     }
-  }, [verificationHistory]);
+  }, [showVerificationHistory, loadVerificationHistory]);
 
   // Handle verification
   const handleVerification = useCallback(async () => {
@@ -234,6 +225,18 @@ export function EnhancedWorldID({
       setIsProcessing(false);
     }
   }, [customAction, customSignal, requireUniqueHuman, isProcessing, verificationStatus, worldID, analytics, wallet.state, onSuccess, onError, saveVerificationToHistory]);
+
+  // Auto-verify if enabled
+  useEffect(() => {
+    if (autoVerify && verificationStatus === 'idle' && !isProcessing) {
+      handleVerification();
+    }
+  }, [autoVerify, verificationStatus, isProcessing, handleVerification]);
+
+  // Update verification status callback
+  useEffect(() => {
+    onVerificationUpdate?.(verificationStatus);
+  }, [verificationStatus, onVerificationUpdate]);
 
   // Reset verification
   const resetVerification = useCallback(() => {

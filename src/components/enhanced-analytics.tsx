@@ -6,20 +6,16 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useEnhancedAnalytics, useEnhancedWallet } from '../providers/enhanced-minikit-provider';
-import { AnalyticsEvent, UserProperties, SDKError } from '../types/miniapp-sdk';
-import { logger } from '../lib/logger';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useEnhancedAnalytics } from '../providers/enhanced-minikit-provider';
 
 /**
  * Enhanced Analytics Props
  */
 interface EnhancedAnalyticsProps {
-  onError?: (error: SDKError) => void;
   className?: string;
   showDashboard?: boolean;
   showRealTime?: boolean;
-  autoTrack?: boolean;
   enableHeatmap?: boolean;
   enableSessionRecording?: boolean;
 }
@@ -84,17 +80,14 @@ type TimeRange = '1h' | '24h' | '7d' | '30d' | '90d';
  * Enhanced Analytics Component
  */
 export function EnhancedAnalytics({
-  onError,
   className = '',
   showDashboard = true,
   showRealTime = true,
-  autoTrack = true,
   enableHeatmap = false,
   enableSessionRecording = false
 }: EnhancedAnalyticsProps) {
   // Hooks
   const analytics = useEnhancedAnalytics();
-  const wallet = useEnhancedWallet();
 
   // Component state
   const [metrics, setMetrics] = useState<AnalyticsMetric[]>([]);
@@ -104,7 +97,7 @@ export function EnhancedAnalytics({
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('24h');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>('page_views');
-  const [userProperties, setUserProperties] = useState<UserProperties>({});
+
   const [customEvent, setCustomEvent] = useState({
     name: '',
     properties: '{}'
@@ -113,42 +106,6 @@ export function EnhancedAnalytics({
   const [realTimeEvents, setRealTimeEvents] = useState<EventData[]>([]);
   const [heatmapData, setHeatmapData] = useState<Array<{ x: number; y: number; intensity: number }>>([]);
   const [sessionRecordings, setSessionRecordings] = useState<Array<{ id: string; duration: number; events: number }>>([]);
-
-  // Load analytics data on mount
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [selectedTimeRange]);
-
-  // Auto-track page views if enabled
-  useEffect(() => {
-    if (autoTrack) {
-      trackPageView();
-    }
-  }, [autoTrack]);
-
-  // Set up real-time event listening
-  useEffect(() => {
-    if (showRealTime) {
-      const interval = setInterval(() => {
-        // Simulate real-time events - in real implementation, this would come from the SDK
-        const mockEvent: EventData = {
-          id: `event-${Date.now()}`,
-          name: 'user_interaction',
-          timestamp: new Date(),
-          properties: {
-            action: 'click',
-            element: 'button',
-            page: window.location.pathname
-          },
-          sessionId: `session_${Date.now()}`
-        };
-        
-        setRealTimeEvents(prev => [mockEvent, ...prev.slice(0, 9)]); // Keep last 10
-      }, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, [showRealTime]);
 
   // Load analytics data
   const loadAnalyticsData = useCallback(async () => {
@@ -265,41 +222,45 @@ export function EnhancedAnalytics({
       }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load analytics data';
-      
-      onError?.({
-        code: 'UNKNOWN_ERROR',
-        message: errorMessage,
-        timestamp: new Date()
-      });
-
-      logger.error('Failed to load analytics data', { error: String(error) });
+      console.error('Failed to load analytics data', error);
     } finally {
       setIsLoading(false);
     }
-  }, [enableHeatmap, enableSessionRecording, onError]);
+  }, [enableHeatmap, enableSessionRecording]);
 
-  // Track page view
-  const trackPageView = useCallback(async () => {
-    try {
-      await analytics.track({
-        name: 'page_view',
-        properties: {
-          page: window.location.pathname,
-          title: document.title,
-          referrer: document.referrer,
-          timestamp: new Date().toISOString(),
-          wallet_connected: wallet.state.isConnected,
-          wallet_address: wallet.state.address
-        }
-      });
-    } catch (error) {
-      logger.error('Failed to track page view', { error: String(error) });
+  // Load analytics data on mount
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [loadAnalyticsData]);
+
+  // Set up real-time event listening
+  useEffect(() => {
+    if (showRealTime) {
+      const interval = setInterval(() => {
+        // Simulate real-time events - in real implementation, this would come from the SDK
+        const mockEvent: EventData = {
+          id: `event-${Date.now()}`,
+          name: 'user_interaction',
+          timestamp: new Date(),
+          properties: {
+            action: 'click',
+            element: 'button',
+            page: window.location.pathname
+          },
+          sessionId: `session_${Date.now()}`
+        };
+        
+        setRealTimeEvents(prev => [mockEvent, ...prev.slice(0, 9)]); // Keep last 10
+      }, 5000);
+
+      return () => clearInterval(interval);
     }
-  }, [analytics, wallet.state]);
+  }, [showRealTime]);
+
+
 
   // Track custom event
-  const trackCustomEvent = useCallback(async () => {
+  const trackCustomEvent = async () => {
     if (!customEvent.name.trim()) {
       return;
     }
@@ -332,24 +293,16 @@ export function EnhancedAnalytics({
       // Reset form
       setCustomEvent({ name: '', properties: '{}' });
 
-      logger.info('Custom event tracked successfully', { event: newEvent.name, properties: JSON.stringify(newEvent.properties) });
+      console.log('Custom event tracked successfully', newEvent.name);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to track custom event';
-      
-      onError?.({
-        code: 'UNKNOWN_ERROR',
-        message: errorMessage,
-        timestamp: new Date()
-      });
-
-      logger.error('Failed to track custom event', { error: String(error) });
+      console.error('Failed to track custom event', error);
     }
-  }, [customEvent, analytics, onError]);
+  };
 
 
 
   // Get metric icon
-  const getMetricIcon = useCallback((metricId: string) => {
+  const getMetricIcon = (metricId: string) => {
     const iconClass = "w-5 h-5";
     
     switch (metricId) {
@@ -397,10 +350,10 @@ export function EnhancedAnalytics({
           </svg>
         );
     }
-  }, []);
+  };
 
   // Get change indicator
-  const getChangeIndicator = useCallback((change: number, changeType: string) => {
+  const getChangeIndicator = (change: number, changeType: string) => {
     const isPositive = changeType === 'increase';
     const color = isPositive ? 'text-green-600' : changeType === 'decrease' ? 'text-red-600' : 'text-gray-600';
     const icon = isPositive ? '↗' : changeType === 'decrease' ? '↘' : '→';
@@ -411,7 +364,7 @@ export function EnhancedAnalytics({
         {Math.abs(change).toFixed(1)}%
       </span>
     );
-  }, []);
+  };
 
   // Format timestamp
   const formatTimestamp = useCallback((timestamp: Date) => {
@@ -419,11 +372,11 @@ export function EnhancedAnalytics({
   }, []);
 
   // Format duration
-  const formatDuration = useCallback((seconds: number) => {
+  const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }, []);
+  };
 
   // Memoized chart component
   const SimpleChart = useMemo(() => {

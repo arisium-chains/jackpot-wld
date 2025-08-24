@@ -87,6 +87,7 @@ interface AmountInputProps {
   label: string;
   placeholder?: string;
   max?: string;
+  min?: string;
   disabled?: boolean;
   error?: string;
 }
