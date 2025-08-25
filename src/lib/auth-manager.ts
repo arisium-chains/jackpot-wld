@@ -252,6 +252,10 @@ export class AuthenticationManager {
       try {
         logger.debug('Verifying signature', { attempt, maxAttempts, address });
 
+        // Extract nonce from SIWE message
+        const nonceMatch = message.match(/Nonce: ([a-fA-F0-9]{64})/);
+        const nonce = nonceMatch?.[1];
+        
         const response = await fetch('/api/siwe/verify', {
           method: 'POST',
           headers: {
@@ -260,7 +264,8 @@ export class AuthenticationManager {
           body: JSON.stringify({
             address,
             message,
-            signature
+            signature,
+            nonce
           }),
         });
 

@@ -157,15 +157,19 @@ export class SimplifiedMiniAppSDK {
       // Optional signature verification
       const { message, signature } = finalPayload;
       if (message && signature) {
+        // Extract nonce from SIWE message
+        const nonceMatch = message.match(/Nonce: ([a-fA-F0-9]{64})/);
+        const nonce = nonceMatch?.[1];
+        
         const response = await fetch('/api/siwe/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address, message, signature })
+          body: JSON.stringify({ address, message, signature, nonce })
         });
         
         const result = await response.json();
         if (!result.ok) {
-          throw new Error('Signature verification failed');
+          throw new Error(result.error || 'Signature verification failed');
         }
       }
 

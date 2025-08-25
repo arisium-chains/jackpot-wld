@@ -192,6 +192,7 @@ describe('useMiniKitWallet', () => {
         address: '0x1234567890123456789012345678901234567890',
         message: 'test-message',
         signature: 'test-signature',
+        nonce: undefined, // nonce extraction will fail for 'test-message'
       }),
     })
   })

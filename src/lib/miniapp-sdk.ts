@@ -670,15 +670,19 @@ export class EnhancedMiniAppSDK implements MiniAppSDK {
   }
 
   private async verifySignature(address: string, message: string, signature: string): Promise<void> {
+    // Extract nonce from SIWE message
+    const nonceMatch = message.match(/Nonce: ([a-fA-F0-9]{64})/);
+    const nonce = nonceMatch?.[1];
+    
     const response = await fetch('/api/siwe/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, message, signature })
+      body: JSON.stringify({ address, message, signature, nonce })
     });
     
     const result = await response.json();
     if (!result.ok) {
-      throw this.createError('VERIFICATION_FAILED', 'Signature verification failed');
+      throw this.createError('VERIFICATION_FAILED', result.error || 'Signature verification failed');
     }
   }
 
