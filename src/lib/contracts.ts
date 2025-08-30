@@ -51,8 +51,14 @@ const FALLBACK_ADDRESSES = {
   // Local development addresses (Anvil)
   localhost: {
     chainId: 31337,
-    poolContract: (process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x') as Address,
-    prizePool: (process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS || '0x') as Address,
+    poolContract: (
+      process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x'
+    ) as Address,
+    prizePool: (
+      process.env.NEXT_PUBLIC_PRIZE_POOL_CONTRACT_ADDRESS ||
+      process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS ||
+      '0x'
+    ) as Address,
     yieldAdapter: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_ADDRESS || '0x') as Address,
     wldToken: (process.env.NEXT_PUBLIC_WLD_TOKEN_ADDRESS || '0x') as Address,
     worldIdRouter: (process.env.NEXT_PUBLIC_WORLD_ID_ROUTER_ADDRESS || '0x') as Address,
@@ -61,9 +67,15 @@ const FALLBACK_ADDRESSES = {
   },
   // Worldchain Sepolia testnet
   worldchainSepolia: {
-    chainId: 11155111,
-    poolContract: (process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x') as Address,
-    prizePool: (process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS || '0x') as Address,
+    chainId: 4801,
+    poolContract: (
+      process.env.NEXT_PUBLIC_POOL_CONTRACT_ADDRESS || '0x'
+    ) as Address,
+    prizePool: (
+      process.env.NEXT_PUBLIC_PRIZE_POOL_CONTRACT_ADDRESS ||
+      process.env.NEXT_PUBLIC_PRIZE_POOL_ADDRESS ||
+      '0x'
+    ) as Address,
     yieldAdapter: (process.env.NEXT_PUBLIC_YIELD_ADAPTER_ADDRESS || '0x') as Address,
     wldToken: (process.env.NEXT_PUBLIC_WLD_TOKEN_ADDRESS || '0x') as Address,
     worldIdRouter: (process.env.NEXT_PUBLIC_WORLD_ID_ROUTER_ADDRESS || '0x') as Address,

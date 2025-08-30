@@ -18,14 +18,20 @@ const localhost = {
   },
 } as const;
 
+// Prefer environment RPCs when available
+const WORLDC_MAINNET_RPC =
+  process.env.NEXT_PUBLIC_WORLDCHAIN_RPC_URL || 'https://worldchain-mainnet.g.alchemy.com/public';
+const WORLDC_SEPOLIA_RPC =
+  process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_RPC_URL ||
+  'https://worldchain-sepolia.g.alchemy.com/public';
+
 export const config = createConfig({
   chains: [worldchainSepolia, worldchain, localhost],
-  connectors: [
-    injected(),
-  ],
+  connectors: [injected()],
   transports: {
-    [worldchain.id]: http('https://worldchain-mainnet.g.alchemy.com/public'),
-    [worldchainSepolia.id]: http('https://worldchain-sepolia.g.alchemy.com/public'),
+    [worldchain.id]: http(WORLDC_MAINNET_RPC),
+    [worldchainSepolia.id]: http(WORLDC_SEPOLIA_RPC),
     [localhost.id]: http(),
   },
 });
