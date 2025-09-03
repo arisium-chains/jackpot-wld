@@ -51,7 +51,7 @@ const DEFAULT_AUTH_OPTIONS: AuthenticationOptions = {
   retryDelay: 2000, // 2 seconds
   statement: 'Sign in to JackpotWLD to access your account',
   domain: typeof window !== 'undefined' ? window.location.host : 'localhost:3000',
-  chainId: 4801, // World Chain Sepolia
+  chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480'), // Use environment chain ID
 };
 
 /**

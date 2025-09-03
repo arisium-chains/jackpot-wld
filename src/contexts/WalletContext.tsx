@@ -150,7 +150,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const address = '0x1234567890123456789012345678901234567890';
         const statement = 'Sign in to JackpotWLD to access your account';
         const version = '1';
-        const chainId = '4801'; // Worldchain Sepolia
+        const chainId = process.env.NEXT_PUBLIC_CHAIN_ID || '480'; // Use environment chain ID
         const issuedAt = new Date().toISOString();
         const expirationTime = new Date(Date.now() + 10 * 60 * 1000).toISOString();
         
@@ -356,7 +356,7 @@ Expiration Time: ${expirationTime}`;
       
       // Step 2: Create SIWE message according to EIP-4361
       const domain = window.location.host;
-      const chainId = '4801'; // Worldchain Sepolia
+      const chainId = process.env.NEXT_PUBLIC_CHAIN_ID || '480'; // Use environment chain ID
       
       logger.info('Calling MiniKit walletAuth', {
         component: 'WalletContext',

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { usePrizePool } from '../hooks/useContracts';
 import { formatEther } from 'viem';
+import { UPDATE_INTERVALS, NOTIFICATION_TIMING, ANIMATION_TIMING, DRAW_INTERVAL, formatTimeRemaining } from '../config/timing';
 
 interface Winner {
   address: string;
@@ -26,6 +27,7 @@ const LotteryDrawManager: React.FC<LotteryDrawManagerProps> = ({
   const [timeUntilDraw, setTimeUntilDraw] = useState<string>('');
   const [showWinnerNotification, setShowWinnerNotification] = useState(false);
   const [latestWinner, setLatestWinner] = useState<Winner | null>(null);
+  const [mockNextDrawTime, setMockNextDrawTime] = useState<number>(Date.now() + DRAW_INTERVAL.MILLISECONDS);
 
   // Mock recent winners data
   useEffect(() => {
@@ -59,7 +61,7 @@ const LotteryDrawManager: React.FC<LotteryDrawManagerProps> = ({
     
     try {
       // Simulate draw process
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, ANIMATION_TIMING.DRAW_SIMULATION));
       
       // Mock winner selection
       const mockWinner: Winner = {
@@ -74,7 +76,10 @@ const LotteryDrawManager: React.FC<LotteryDrawManagerProps> = ({
       
       // Show winner notification
       setShowWinnerNotification(true);
-      setTimeout(() => setShowWinnerNotification(false), 10000);
+      setTimeout(() => setShowWinnerNotification(false), NOTIFICATION_TIMING.WINNER_DISPLAY_DURATION);
+      
+      // Set next draw time to 5 minutes from now
+      setMockNextDrawTime(Date.now() + DRAW_INTERVAL.MILLISECONDS);
       
     } catch (error) {
       console.error('Draw failed:', error);
@@ -92,18 +97,11 @@ const LotteryDrawManager: React.FC<LotteryDrawManagerProps> = ({
   // Calculate time until next draw
   useEffect(() => {
     const updateCountdown = () => {
-      if (!nextDrawTime) return;
-      
       const now = Date.now();
-      const drawTime = Number(nextDrawTime) * 1000; // Convert from seconds to milliseconds
-      const difference = drawTime - now;
+      const difference = mockNextDrawTime - now;
 
       if (difference > 0) {
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-        
-        setTimeUntilDraw(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        setTimeUntilDraw(formatTimeRemaining(difference));
       } else {
         setTimeUntilDraw('Draw in progress...');
         // Trigger automatic draw when time is up
@@ -113,11 +111,11 @@ const LotteryDrawManager: React.FC<LotteryDrawManagerProps> = ({
       }
     };
 
-    const interval = setInterval(updateCountdown, 1000);
+    const interval = setInterval(updateCountdown, UPDATE_INTERVALS.COUNTDOWN);
     updateCountdown();
 
     return () => clearInterval(interval);
-  }, [nextDrawTime, isDrawing, handleAutomaticDraw]);
+  }, [mockNextDrawTime, isDrawing, handleAutomaticDraw]);
 
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();

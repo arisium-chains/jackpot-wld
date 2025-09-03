@@ -27,7 +27,7 @@ const WORLDC_SEPOLIA_RPC =
   'https://worldchain-sepolia.g.alchemy.com/public';
 
 export const config = createConfig({
-  chains: [worldchainSepolia, worldchain, localhost],
+  chains: [worldchain, worldchainSepolia, localhost],
   connectors: [injected()],
   transports: {
     [worldchain.id]: http(WORLDC_MAINNET_RPC),

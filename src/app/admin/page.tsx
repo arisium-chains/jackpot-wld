@@ -42,7 +42,7 @@ export default function AdminPage() {
     
     try {
       setIsLoading(true);
-      const intervalInSeconds = parseInt(drawInterval) * 3600; // Convert hours to seconds
+      const intervalInSeconds = parseInt(drawInterval) * 60; // Convert minutes to seconds
       
       writeContract({
         address: addresses.prizePool,

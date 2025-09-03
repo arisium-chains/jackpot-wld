@@ -131,7 +131,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       if (autoOptimize && shouldAutoOptimize(currentMetrics)) {
         handleOptimize();
       }
-    }, 2000); // Update every 2 seconds
+    }, process.env.NEXT_PUBLIC_PERFORMANCE_UPDATE_INTERVAL ? parseInt(process.env.NEXT_PUBLIC_PERFORMANCE_UPDATE_INTERVAL) : 2000); // Update interval from env
 
     return () => clearInterval(interval);
   }, [optimizer, isMonitoring, autoOptimize, checkPerformanceAlerts, handleOptimize, shouldAutoOptimize]);

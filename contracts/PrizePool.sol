@@ -281,7 +281,7 @@ contract PrizePool is IPrizePool, ReentrancyGuard, Ownable {
      */
     function setDrawInterval(uint256 interval) external override onlyOwner {
         require(interval > 0, "Interval must be greater than 0");
-        require(interval >= 1 hours, "Interval too short");
+        require(interval >= 5 minutes, "Interval too short - minimum 5 minutes");
         
         drawInterval = interval;
         

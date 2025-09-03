@@ -59,7 +59,8 @@ export function WorldAppDebugPanel({
     updateLogs()
 
     // Set up polling for new logs
-    intervalRef.current = setInterval(updateLogs, 1000)
+    const debugInterval = process.env.NEXT_PUBLIC_DEBUG_LOG_INTERVAL ? parseInt(process.env.NEXT_PUBLIC_DEBUG_LOG_INTERVAL) : 1000;
+    intervalRef.current = setInterval(updateLogs, debugInterval)
 
     return () => {
       if (intervalRef.current) {

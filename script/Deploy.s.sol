@@ -215,7 +215,7 @@ contract DeployScript is Script {
         prizePool.setPoolContract(contracts.poolContract);
         console.log("Pool Contract set for Prize Pool");
 
-        // 3. Set initial parameters for local testing
+        // 3. Set initial parameters for testing and production
         if (block.chainid == 31337) {
             console.log("Setting test parameters for local deployment...");
             
@@ -223,8 +223,13 @@ contract DeployScript is Script {
             poolContract.setYieldHarvestThreshold(10 * 1e18); // 10 WLD
             poolContract.setYieldHarvestInterval(1 hours);
             
-            // Set shorter draw interval for testing
-            prizePool.setDrawInterval(1 hours); // 1 hour for testing instead of 24 hours
+            // Set 5-minute draw interval for frequent winning events
+            prizePool.setDrawInterval(5 minutes); // 5 minutes for frequent wins
+        } else {
+            console.log("Setting production parameters...");
+            
+            // Set 5-minute draw interval for frequent winning events on mainnet
+            prizePool.setDrawInterval(5 minutes); // 5 minutes for frequent wins
         }
         
         console.log("Contract initialization completed successfully");

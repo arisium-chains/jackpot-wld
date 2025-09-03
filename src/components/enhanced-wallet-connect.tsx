@@ -82,7 +82,7 @@ export function EnhancedWalletConnect({
         statement: 'Connect to Enhanced MiniApp',
         uri: window.location.origin,
         version: '1',
-        chainId: 4801, // World Chain Sepolia
+        chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480'), // Use environment chain ID
         ...customAuthOptions
       };
 

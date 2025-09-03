@@ -121,7 +121,7 @@ export class SimplifiedMiniAppSDK {
             isConnected: true,
             address: mockAddress,
             balance: '1000.0',
-            chainId: 4801, // World Chain Sepolia default
+            chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480'), // Use environment chain ID
             isConnecting: false
           };
           logger.info('Mock wallet connected for development', { address: mockAddress });
@@ -178,7 +178,7 @@ export class SimplifiedMiniAppSDK {
         isConnected: true,
         address,
         balance: '0', // Will be updated by getBalance
-        chainId: 4801, // World Chain Sepolia default
+        chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480'), // Use environment chain ID
         isConnecting: false
       };
 
@@ -201,7 +201,7 @@ export class SimplifiedMiniAppSDK {
       isConnected: false,
       address: null,
       balance: '0',
-      chainId: 4801, // World Chain Sepolia
+      chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480'), // Use environment chain ID
       isConnecting: false
     };
     
@@ -495,7 +495,7 @@ export class SimplifiedMiniAppSDK {
         isConnected: false,
         address: null,
         balance: '0',
-        chainId: 4801, // World Chain Sepolia
+        chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480'), // Use environment chain ID
         isConnecting: false
       },
       worldId: {

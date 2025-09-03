@@ -8,9 +8,9 @@ pragma solidity ^0.8.24;
  */
 library Constants {
     // Time constants
-    uint256 public constant MIN_DRAW_INTERVAL = 1 hours;
+    uint256 public constant MIN_DRAW_INTERVAL = 5 minutes; // Allow 5-minute draws for frequent wins
     uint256 public constant MAX_DRAW_INTERVAL = 7 days;
-    uint256 public constant DEFAULT_DRAW_INTERVAL = 24 hours;
+    uint256 public constant DEFAULT_DRAW_INTERVAL = 5 minutes; // Default to 5-minute winning events
 
     // Amount constants
     uint256 public constant MIN_DEPOSIT_AMOUNT = 1e18; // 1 WLD

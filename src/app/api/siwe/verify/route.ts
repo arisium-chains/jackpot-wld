@@ -60,9 +60,10 @@ function validateSIWEMessage(message: string): ValidationResult {
     }
     
     // Validate chain ID
+    const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '480', 10);
     const chainIdNum = parseInt(chainId, 10);
-    if (isNaN(chainIdNum) || chainIdNum !== 4801) {
-      return { valid: false, error: 'InvalidChainId', details: { provided: chainId, expected: '4801' } };
+    if (isNaN(chainIdNum) || chainIdNum !== expectedChainId) {
+      return { valid: false, error: 'InvalidChainId', details: { provided: chainId, expected: expectedChainId.toString() } };
     }
     
     // Validate nonce format (64 character hex string)
